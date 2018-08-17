@@ -1,10 +1,12 @@
 
 # Integer FFT/IFFT cores
 
-This project contains integer FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;  
-Integer data type and twiddles. Code language - VHDL. Vendor: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
+This project contains **fully pipelined** integer unscaled FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;    
+Integer data type and twiddles. Code language - VHDL.  
+Vendor: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
 
-_Smallest FPGA resourses and highest processing frequency that you ever seen!_  
+> _Smallest FPGA resourses and highest processing frequency that you ever seen!_   
+
 License: GNU GPL 3.0.
 
 ### Main information
