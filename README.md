@@ -1,7 +1,7 @@
 
 # Integer FFT/IFFT cores
 
-This project contains **fully pipelined** integer unscaled FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;    
+This project contains **fully pipelined** integer **unscaled** and **scaled (truncate-LSB)** FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;    
 Integer data type and twiddles. Code language - VHDL.  
 Vendor: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
 
@@ -23,13 +23,15 @@ License: GNU GPL 3.0.
 
 ### List of complements:
 - FFTs:
-   * int_fftNk – main core - FFT, Radix-2, DIF, input flow - normal, output flow - bit-reversed.
-   * int_ifftNk – main core - IFFT, Radix-2, DIT, input flow - bit-reversed, output flow - normal.
-
+   * int_fftNk – main core - Full-precision FFT, Radix-2, DIF, input flow - normal, output flow - bit-reversed.
+   * int_ifftNk – main core - Full-precision IFFT, Radix-2, DIT, input flow - bit-reversed, output flow - normal.
+   * int_fftNk_cs – main core - Scaled FFT, Radix-2, DIF, input flow - normal, output flow - bit-reversed.
+   * int_ifftNk_cs – main core - Scaled IFFT, Radix-2, DIT, input flow - bit-reversed, output flow - normal.
 - Bflies:
-   * int_dif2_fly – butterfly Radix-2, decimation in frequency,
-   * int_dit2_fly – butterfly Radix-2, decimation in time,
-
+   * int_dif2_fly – Full-precision butterfly Radix-2, decimation in frequency,
+   * int_dit2_fly – Full-precision butterfly Radix-2, decimation in time,
+   * int_dif2_fly_sc – Scaled butterfly Radix-2, decimation in frequency,
+   * int_dit2_fly_sc – Scaled butterfly Radix-2, decimation in time,
 - Complex multipliers:
    * int_cmult_dsp48 – main integer complex multiplier contains several cmults:
      * int_cmult18x25_dsp48 – simple 25 x 18 two’s-complement half-complex-multiplier,
