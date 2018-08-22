@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="fft_signle_test_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="fft_signle_test" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="32515100000fs"></ZoomStartTime>
+      <ZoomEndTime time="52675100001fs"></ZoomEndTime>
+      <Cursor1Time time="37555100000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="150"></NameColumnWidth>
+      <ValueColumnWidth column_width="60"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="11" />
+   <wvobject fp_name="/fft_signle_test/di_re" type="array">
+      <obj_property name="ElementShortName">di_re[15:0]</obj_property>
+      <obj_property name="ObjectShortName">di_re[15:0]</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="CustomSignalColor">#FF0080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/di_im" type="array">
+      <obj_property name="ElementShortName">di_im[15:0]</obj_property>
+      <obj_property name="ObjectShortName">di_im[15:0]</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="CustomSignalColor">#0000FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/di_en" type="logic">
+      <obj_property name="ElementShortName">di_en</obj_property>
+      <obj_property name="ObjectShortName">di_en</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/do_re" type="array">
+      <obj_property name="ElementShortName">do_re[25:0]</obj_property>
+      <obj_property name="ObjectShortName">do_re[25:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/do_im" type="array">
+      <obj_property name="ElementShortName">do_im[25:0]</obj_property>
+      <obj_property name="ObjectShortName">do_im[25:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/do_vl" type="logic">
+      <obj_property name="ElementShortName">do_vl</obj_property>
+      <obj_property name="ObjectShortName">do_vl</obj_property>
+      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/sc_re" type="array">
+      <obj_property name="ElementShortName">sc_re[15:0]</obj_property>
+      <obj_property name="ObjectShortName">sc_re[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/sc_im" type="array">
+      <obj_property name="ElementShortName">sc_im[15:0]</obj_property>
+      <obj_property name="ObjectShortName">sc_im[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+      <obj_property name="WaveformStyle">STYLE_ANALOG</obj_property>
+      <obj_property name="CellHeight">100</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/sc_vl" type="logic">
+      <obj_property name="ElementShortName">sc_vl</obj_property>
+      <obj_property name="ObjectShortName">sc_vl</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/NFFT" type="other">
+      <obj_property name="ElementShortName">NFFT</obj_property>
+      <obj_property name="ObjectShortName">NFFT</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fft_signle_test/DATA_WIDTH" type="other">
+      <obj_property name="ElementShortName">DATA_WIDTH</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH</obj_property>
+   </wvobject>
+</wave_config>

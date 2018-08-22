@@ -67,7 +67,7 @@ architecture fft_signle_test of fft_signle_test is
 -- **************************************************************** --
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
-constant	NFFT 		: integer:=3; -- Number of stages = log2(FFT LENGTH)
+constant	NFFT 		: integer:=10; -- Number of stages = log2(FFT LENGTH)
 
 constant	DATA_WIDTH	: integer:=16; -- Data width for signal imitator	: 8-32.
 constant	TWDL_WIDTH	: integer:=16; -- Data width for twiddle factor 	: 16-24.
@@ -93,6 +93,10 @@ signal di_en			: std_logic:='0';
 signal do_re			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
 signal do_im 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
 signal do_vl			: std_logic;
+
+signal sc_re			: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_im 			: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_vl			: std_logic;
 
 begin
 
@@ -177,13 +181,37 @@ UUT: entity work.int_fft_single_path
 		---- Input data ----
 		DI_RE			=> di_re,
 		DI_IM			=> di_im,
-		DI_EN			=> di_en,		
+		DI_EN			=> di_en,
 		---- Output data ----
-		DO_RE			=> do_re, 		
-		DO_IM			=> do_im, 		
+		DO_RE			=> do_re,
+		DO_IM			=> do_im,
 		DO_VL			=> do_vl,
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd
 	);
-
+	
+UUT_SC: entity work.int_fft_single_scaled
+	generic map ( 
+		TD				=> 0.1 ns,	
+		DATA_WIDTH		=> DATA_WIDTH,
+		TWDL_WIDTH		=> TWDL_WIDTH,	
+		XSERIES			=> XSERIES,	
+		NFFT			=> NFFT,	
+		USE_MLT			=> USE_MLT	
+	)   
+	port map ( 
+		---- Common signals ----
+		RESET			=> reset,	
+		CLK				=> clk,	
+		---- Input data ----
+		DI_RE			=> di_re,
+		DI_IM			=> di_im,
+		DI_EN			=> di_en,
+		---- Output data ----
+		DO_RE			=> sc_re,
+		DO_IM			=> sc_im,
+		DO_VL			=> sc_vl,
+		---- Butterflies ----
+		FLY_FWD			=> fly_fwd
+	);
 end fft_signle_test; 

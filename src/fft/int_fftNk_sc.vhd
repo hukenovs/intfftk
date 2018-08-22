@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 --
--- Title       : int_fftNk
+-- Title       : int_fftNk_sc
 -- Design      : Integer Forward FFTK
 -- Author      : Kapitanov Alexander
 -- Company     : 
@@ -8,7 +8,7 @@
 --
 -------------------------------------------------------------------------------
 --
--- Description : Integer Unscaled Forward Fast Fourier Transform: N = 8 to 512K
+-- Description : Integer Scaled Forward Fast Fourier Transform: N = 8 to 512K
 -- 					(You must use 2D-FFT for N > 512K!)
 --
 --    Input data: IN0 and IN1 where
@@ -58,7 +58,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity int_fftNk is
+entity int_fftNk_sc is
 	generic (													    
 		IS_SIM		: boolean:=FALSE;		--! Simulation model: TRUE / FALSE
 		TD			: time:=0.5ns;			--! Simulation time		
@@ -80,17 +80,17 @@ entity int_fftNk is
 		DI_IM1		: in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Input data Odd Im
 		DI_ENA		: in  std_logic; --! Input valid data
 
-		DO_RE0		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Even Re
-		DO_IM0		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Even Im
-		DO_RE1		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Odd Re
-		DO_IM1		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Odd Im
+		DO_RE0		: out std_logic_vector(DATA_WIDTH-1 downto 0); --! Output data Even Re
+		DO_IM0		: out std_logic_vector(DATA_WIDTH-1 downto 0); --! Output data Even Im
+		DO_RE1		: out std_logic_vector(DATA_WIDTH-1 downto 0); --! Output data Odd Re
+		DO_IM1		: out std_logic_vector(DATA_WIDTH-1 downto 0); --! Output data Odd Im
 		DO_VAL		: out std_logic --! Output valid data
 	);
-end int_fftNk;
+end int_fftNk_sc;
 
-architecture int_fftNk of int_fftNk is	
+architecture int_fftNk_sc of int_fftNk_sc is	
 
-type complex_WxN is array (NFFT-1 downto 0) of std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+type complex_WxN is array (NFFT-1 downto 0) of std_logic_vector(DATA_WIDTH-1 downto 0);
 
 -------- Butterfly In / Out --------
 signal ia_re		: complex_WxN;
@@ -122,7 +122,7 @@ signal ss_en		: std_logic_vector(NFFT-1 downto 0);
 signal xx_vl		: std_logic_vector(NFFT-1 downto 0);
 
 -------- Delay data Cross-commutation --------
-type complex_DxN is array (NFFT-2 downto 0) of std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
+type complex_DxN is array (NFFT-2 downto 0) of std_logic_vector(2*DATA_WIDTH-1 downto 0);
 
 signal di_aa 		: complex_DxN;
 signal di_bb 		: complex_DxN;  
@@ -151,26 +151,26 @@ xCALC: for ii in 0 to NFFT-1 generate
 begin			
 
 	---- Butterflies ----
-	xBUTTERFLY: entity work.int_dif2_fly
+	xBUTTERFLY: entity work.int_dif2_fly_sc
 		generic map ( 
 			IS_SIM 	=> IS_SIM,
 			TD 		=> TD,
 			STAGE 	=> NFFT-ii-1,
-			DTW 	=> DATA_WIDTH+ii,
+			DTW 	=> DATA_WIDTH,
 			TFW 	=> TWDL_WIDTH,
 			XSER 	=> XSER
 		)
 		port map (
-			IA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii downto 0),
+			IA_RE	=> sa_re(ii),
+			IA_IM	=> sa_im(ii),
+			IB_RE	=> sb_re(ii),
+			IB_IM	=> sb_im(ii),
 			IN_EN	=> ss_en(ii),
 
-			OA_RE	=> oa_re(ii)(DATA_WIDTH+ii downto 0),
-			OA_IM	=> oa_im(ii)(DATA_WIDTH+ii downto 0),
-			OB_RE	=> ob_re(ii)(DATA_WIDTH+ii downto 0),
-			OB_IM	=> ob_im(ii)(DATA_WIDTH+ii downto 0),
+			OA_RE	=> oa_re(ii),
+			OA_IM	=> oa_im(ii),
+			OB_RE	=> ob_re(ii),
+			OB_IM	=> ob_im(ii),
 			DO_VL	=> ab_vl(ii),
 			
 			WW_RE	=> ww_re(ii),
@@ -202,21 +202,21 @@ begin
 	---- Aligne data for butterfly calc ----
 	xALIGNE: entity work.int_align_fft 
 		generic map ( 		
-			DATW	=> DATA_WIDTH+ii,
+			DATW	=> DATA_WIDTH,
 			NFFT	=> NFFT,
 			STAGE 	=> NFFT-ii-1
 		)
 		port map (	
 			CLK		=> clk,
-			IA_RE	=> ia_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IA_IM	=> ia_im(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_RE	=> ib_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_IM	=> ib_im(ii)(DATA_WIDTH-1+ii downto 0),
+			IA_RE	=> ia_re(ii),
+			IA_IM	=> ia_im(ii),
+			IB_RE	=> ib_re(ii),
+			IB_IM	=> ib_im(ii),
 			
-			OA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii downto 0),
-			OA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii downto 0),
-			OB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii downto 0),
-			OB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii downto 0),
+			OA_RE	=> sa_re(ii),
+			OA_IM	=> sa_im(ii),
+			OB_RE	=> sb_re(ii),
+			OB_IM	=> sb_im(ii),
 			
 			BF_EN	=> ab_en(ii),
 			BF_VL	=> ss_en(ii),
@@ -246,34 +246,33 @@ begin
 end generate;
 
 xDELAYS: for ii in 0 to NFFT-2 generate
-		constant DW : integer:=(DATA_WIDTH+ii)+1;
 	begin
 	
-	di_aa(ii)(2*DW-1 downto 0) <= xa_im(ii)(DW-1 downto 0) & xa_re(ii)(DW-1 downto 0);	
-	di_bb(ii)(2*DW-1 downto 0) <= xb_im(ii)(DW-1 downto 0) & xb_re(ii)(DW-1 downto 0);	
+	di_aa(ii) <= xa_im(ii) & xa_re(ii);	
+	di_bb(ii) <= xb_im(ii) & xb_re(ii);	
 	di_en(ii) <= xx_vl(ii);
 	
 	xDELAY_LINE : entity work.int_delay_line
 		generic map(
-			NWIDTH		=> 2*DW,
+			NWIDTH		=> 2*DATA_WIDTH,
 			NFFT		=> NFFT,
 			STAGE		=> ii	
 		)
 		port map (
-			DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
-			DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+			DI_AA		=> di_aa(ii),
+			DI_BB		=> di_bb(ii),
 			DI_EN		=> di_en(ii),  
-			DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
-			DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+			DO_AA		=> do_aa(ii),
+			DO_BB		=> do_bb(ii),
 			DO_VL		=> do_en(ii),
 			RST 		=> rst,
 			CLK 		=> clk
 		);
 
-	ia_re(ii+1)(DW-1 downto 0) <= do_aa(ii)(1*DW-1 downto 0*DW);
-	ia_im(ii+1)(DW-1 downto 0) <= do_aa(ii)(2*DW-1 downto 1*DW);
-	ib_re(ii+1)(DW-1 downto 0) <= do_bb(ii)(1*DW-1 downto 0*DW);
-	ib_im(ii+1)(DW-1 downto 0) <= do_bb(ii)(2*DW-1 downto 1*DW);	
+	ia_re(ii+1)(DATA_WIDTH-1 downto 0) <= do_aa(ii)(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
+	ia_im(ii+1)(DATA_WIDTH-1 downto 0) <= do_aa(ii)(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
+	ib_re(ii+1)(DATA_WIDTH-1 downto 0) <= do_bb(ii)(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
+	ib_im(ii+1)(DATA_WIDTH-1 downto 0) <= do_bb(ii)(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);	
 	ab_en(ii+1) <= do_en(ii); 
 end generate;
 
@@ -296,4 +295,4 @@ begin
 	end if;
 end process;
 
-end int_fftNk;
+end int_fftNk_sc;

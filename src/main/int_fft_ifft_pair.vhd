@@ -58,7 +58,7 @@ use std.textio.all;
 entity int_fft_ifft_pair is
 	generic (	
 		TD				: time:=0.1ns;  		--! Simulation time	
-		NFFT			: integer:=13;			--! Number of FFT stages
+		NFFT			: integer:=16;			--! Number of FFT stages
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
 		XSERIES			: string:="NEW";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
