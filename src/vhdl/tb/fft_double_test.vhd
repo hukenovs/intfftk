@@ -94,6 +94,11 @@ signal do_re			: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
 signal do_im 			: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
 signal do_vl			: std_logic;
 
+signal sc_re			: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_im 			: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_vl			: std_logic;
+
+
 begin
 
 clk <= not clk after 5 ns;
@@ -211,5 +216,32 @@ UUT: entity work.int_fft_ifft_pair
 		FLY_INV			=> fly_inv
 	);
 
+UUT_SC: entity work.int_fft_ifft_scaled
+	generic map ( 
+		TD				=> 0.1 ns,	
+		DATA_WIDTH		=> DATA_WIDTH,
+		TWDL_WIDTH		=> TWDL_WIDTH,	
+		XSERIES			=> XSERIES,	
+		NFFT			=> NFFT,	
+		USE_MLT			=> USE_MLT	
+	)   
+	port map ( 
+		---- Common signals ----
+		RESET			=> reset,	
+		CLK				=> clk,	
+		---- Input data ----
+		D0_RE			=> d0_re,
+		D1_RE			=> d1_re,
+		D0_IM			=> d0_im,
+		D1_IM			=> d1_im,
+		DI_EN			=> di_en,		
+		---- Output data ----
+		DO_RE			=> sc_re, 		
+		DO_IM			=> sc_im, 		
+		DO_VL			=> sc_vl,
+		---- Butterflies ----
+		FLY_FWD			=> fly_fwd,
+		FLY_INV			=> fly_inv
+	);	
 	
 end fft_double_test; 
