@@ -149,27 +149,27 @@
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 --
---	The MIT License (MIT)
---	Copyright (c) 2016 Kapitanov Alexander 													 
+--	GNU GENERAL PUBLIC LICENSE
+--  Version 3, 29 June 2007		 
+--
+--	Copyright (c) 2018 Kapitanov Alexander
 --		                                          				 
--- Permission is hereby granted, free of charge, to any person do_bbtaining a copy 
--- of this software and assocdi_aated documentation files (the "Software"), 
--- to deal in the Software without restriction, including without limitation 
--- the rights to use, copy, modify, merge, publish, distrdi_bbute, sublicense, 
--- and/or sell copies of the Software, and to permit persons to whom the 
--- Software is furnished to do so, subject to the following conditions:
+--  This program is free software: you can redistribute it and/or modify
+--  it under the terms of the GNU General Public License as published by
+--  the Free Software Foundation, either version 3 of the License, or
+--  (at your option) any later version.
 --
--- The above copyright notice and this permission notice shall be included in 
--- all copies or substantdi_aal portions of the Software.
+--  You should have received a copy of the GNU General Public License
+--  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 --
---
--- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
--- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
--- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
--- THE AUTHORS OR COPYRIGHT HOLDERS BE Ldi_aaBLE FOR ANY CLAIM, DAMAGES OR OTHER 
--- Ldi_aaBILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
--- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
--- IN THE SOFTWARE.
+--  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+--  APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT 
+--  HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY 
+--  OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, 
+--  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+--  PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM 
+--  IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF 
+--  ALL NECESSARY SERVICING, REPAIR OR CORRECTION. 
 -- 	                                                 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
