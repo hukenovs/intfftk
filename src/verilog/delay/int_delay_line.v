@@ -65,7 +65,7 @@
 // DI_EN     ___/                        \____
 // DI_AA:        /0\/1\/2\/3\/4\/5\/6\/7\
 // DI_BB:        \8/\9/\A/\B/\C/\D/\E/\F/
-//                ___________
+//              ___________
 // crx*:    ___|           |________________
 //
 // Output:              ________________________
@@ -182,7 +182,7 @@ module int_delay_line
 		STAGE  = 16
 	)
 	(
-		input  CLK, 
+		input  CLK, RST,
 		input  [NWIDTH-1:0] DI_AA, DI_BB,
 		output reg [NWIDTH-1:0] DO_AA, DO_BB,
 		
@@ -193,102 +193,117 @@ module int_delay_line
 
 	localparam integer N_INV = NFFT-STAGE-2; 
 
-	wire di_enz, crx
+	reg di_enz, crx;
 
-	wire [N_INV : 0] cnt_wrcr;
-	wire [NWIDTH-1 : 0] do_aa_e, do_bb_e;
-	
+	reg [N_INV : 0] cnt_wrcr;
+	reg [NWIDTH-1 : 0] do_aa_e, do_bb_e, di_aaz;
 	reg [NWIDTH-1 : 0] ram0_din, ram1_din, ram0_dout, ram1_dout;
-	wire [NWIDTH-1 : 0] di_aaz;
 
-// begin
- 
-// -- Common processes for delay lines --
+	// -- Common processes for delay lines --
+	always @(posedge(CLK)) begin
+		if (RST) begin
+			cnt_wrcr <= {(N_INV+1){1'b0}};
+		end else begin
+			if (di_enz) begin
+				cnt_wrcr <= cnt_wrcr + 1'b1;
+			end 
+		end
+	end
 
-// pr_cnt_wrcr: process(clk) is
-// begin
-	// if rising_edge(clk) then
-		// if (rst = '1') then 
-			// cnt_wrcr <= (others => '0');			
-		// else
-			// if (di_enz = '1') then
-				// cnt_wrcr <= cnt_wrcr + '1';
-			// end if;
-		// end if;	
-	// end if;
-// end process;	
+	always @(posedge(CLK)) begin
+		if (RST) begin
+			ram0_din <= {(NWIDTH){1'b0}};
+			ram1_din <= {(NWIDTH){1'b0}};
+		end else begin
+			if (DI_EN) begin
+				ram0_din <= DI_BB;
+			end
+			if (crx) begin
+				ram1_din <= ram0_dout; 
+			end else begin
+				ram1_din <= di_aaz;
+			end
+		end
+	end
 
-// pr_din: process(clk) is
-// begin		
-	// if rising_edge(clk) then
-		// if (rst = '1') then
-			// ram0_din <=	(others => '0');
-			// ram1_din <=	(others => '0');
-		// else		
-			// if (di_en = '1') then
-				// ram0_din <=	di_bb;
-			// end if;
-			// if (crx = '1') then
-				// ram1_din <= ram0_dout; 
-			// else
-				// ram1_din <= di_aaz;
-			// end if;					
-		// end if;							
-	// end if;
-// end process; 
+	always @(*) begin
+		DO_AA <= do_aa_e;
+	end
+	
+	generate 
+		if (N_INV < 9) begin
 
-// do_aa <= do_aa_e;
+			reg [2**(N_INV)-1 : 0] ram_del;
 
-// G_DEL_SHORT: if (N_INV < 9) generate
-	// signal ram_del : std_logic_vector(2**(N_INV)-1 : 0]:=(others=>'0');
-// begin
-	
-	// di_enz <= di_en;
-	// crx <= cnt_wrcr(N_INV);	
-	// di_aaz <= di_aa;
-	
-	// ram_del <= ram_del(2**(N_INV)-2 : 0] & di_en when rising_edge(clk);
-	
-	// -- RAMB delay line 1 -- 
-	// GEN_GRT1: if (N_INV > 0) generate
-		// constant delay  : integer:=2**(N_INV)-2;
-		// type std_logic_array_NarrxNWIDTH is array (delay : 0] of std_logic_vector[NWIDTH-1 : 0];	
-		// signal dout0, dout1	: std_logic_array_NarrxNWIDTH;
-	// begin			
-		// dout1 <= dout1(delay-1 : 0] & ram1_din when rising_edge(clk);	
-		// dout0 <= dout0(delay-1 : 0] & ram0_din when rising_edge(clk);
+			always @(*) begin
+				di_enz <= DI_EN;
+				di_aaz <= DI_AA;
+				crx <= cnt_wrcr[N_INV];
+			end
+					
+			integer i;
+			always @(posedge(CLK)) begin
+				for(i = 2**(N_INV)-1; i > 0; i=i-i) begin
+					ram_del[i] <= ram_del[i-1];
+				end
+				ram_del[0] <= DI_EN;
+			end
 
-		// ram1_dout <= dout1(delay);
-		// ram0_dout <= dout0(delay);
-	// end generate;
-	
-	// -- RAMB delay line 0 -- 
-	// GEN_LOW1: if (N_INV = 0 ) generate	
-		// ram0_dout <= ram0_din;
-		// ram1_dout <= ram1_din;
-	// end generate;
-	
-	// do_vl <= ram_del(2**(N_INV)-1) when rising_edge(clk);
-	
-	// pr_out: process(clk) is
-	// begin
-		// if rising_edge(clk) then
-			// if (ram_del(2**(N_INV)-1) = '1') then
-				// do_aa_e <= ram1_dout;
-				// if (crx = '1') then
-					// do_bb_e <= di_aa;   			
-				// else
-					// do_bb_e <= ram0_dout; 			
-				// end if;
-			// end if;
-		// end if;
-	// end process; 
-	
-	// do_bb <= do_bb_e;
-// end generate; 
+			// -- RAMB delay line 1 -- 
+			if (N_INV > 0) begin
 
-// G_DEL_LONG: if (N_INV >= 9) generate
+				localparam integer delay=2**(N_INV)-2;
+				reg [NWIDTH-1 : 0] dout0, dout1 [delay : 0];
 	
+				always @(posedge(CLK)) begin
+					for(i = delay; i > 0; i=i-i) begin
+						dout0[i] <= dout0[i-1];
+						dout1[i] <= dout1[i-1];
+					end
+					dout0[0] <= ram0_din;
+					dout1[0] <= ram1_din;
+				end
+				
+				always @(*) begin
+					ram0_dout <= dout0[delay];
+				end
+				
+			// -- RAMB delay line 0 -- 	
+			end else if (N_INV == 0) begin
+			
+				always @(*) begin
+					ram0_dout <= ram0_din;
+					ram0_dout <= ram1_din;
+				end	
+			end
+			
+			always @(posedge(CLK)) begin
+				DO_VL <= ram_del[2**(N_INV)-1];
+			end			
+
+			always @(posedge(CLK)) begin
+				if (ram_del[2**(N_INV)-1]) begin
+					do_aa_e <= ram1_dout;
+					
+					if (crx) begin
+						do_bb_e <= DI_AA; 
+					end else begin
+						do_bb_e <= ram0_dout;
+					end	
+				end
+			end		
+	
+			always @(*) begin
+				DO_BB <= do_bb_e;
+			end	
+			
+		// ---- Generate LONG delay line ----
+		end else if (N_INV >= 9) begin
+		
+		
+		end
+	endgenerate
+
 	// signal cnt_wr 		: std_logic_vector(N_INV-1 : 0];	
 	
 	// signal addrs		: std_logic_vector(N_INV-1 : 0]; 
@@ -322,8 +337,6 @@ module int_delay_line
 	// attribute ram_style of bram1	: signal is "block";
 	
 	// signal di_aa_ze 	: std_logic_vector[NWIDTH-1 : 0];
-	
-// begin
 	
 	// pr_cnd: process(clk) is
 	// begin
@@ -443,6 +456,6 @@ module int_delay_line
 			// end if;
 		// end if;	
 	// end process;	
-// end generate;
+// end begin;
 
-end int_delay_line;
+endmodule
