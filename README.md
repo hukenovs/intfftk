@@ -2,8 +2,9 @@
 # Integer FFT/IFFT cores
 
 This project contains **fully pipelined** integer **unscaled** and **scaled (truncate-LSB)** FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;    
-Integer data type and twiddles. Code language - VHDL.  
-Vendor: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
+Integer data type and twiddles.  
+**Code language** - VHDL.  
+**Vendor**: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
 
 > _Smallest FPGA resourses and highest processing frequency that you ever seen!_   
 
@@ -70,3 +71,11 @@ License: GNU GPL 3.0.
   * iobuf_flow_int2 – Mode-1: BITREV = FALSE: convert Interleave-2 flow into two parts of input flows, Mode-2: BITREV = TRUE: convert two-half flows into Interleave-2 signal. 
   * int_bitrev_ord – simple converter data from bit-reverse to natural order.
 
+### Authors:
+  * Kapitanov Alexander  
+  
+### Release:
+  * 2018/08/10.
+
+### License:
+  * GNU GPL 3.0.  
