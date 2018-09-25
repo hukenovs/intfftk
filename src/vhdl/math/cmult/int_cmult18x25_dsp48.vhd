@@ -67,6 +67,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_signed.all;
+use ieee.std_logic_arith.all;
 
 library unisim;
 use unisim.vcomponents.DSP48E1;	
@@ -117,28 +118,11 @@ begin
 	end generate;
 
 	---- Wrap input data B ----
-	xM12B: for ii in 0 to 17 generate
-		xLSB: if (ii < MBW) generate 
-			dspB_M1(ii) <= M1_BB(ii);
-			dspB_M2(ii) <= M2_BB(ii);
-		end generate;
-		xMSB: if (ii >= MBW) generate
-			dspB_M1(ii) <= M1_BB(MBW-1);
-			dspB_M2(ii) <= M2_BB(MBW-1);
-		end generate;
-	end generate;
-	
+	dspB_M1 <= SXT(M1_BB, 18);
+	dspB_M2 <= SXT(M2_BB, 18);
 	---- Wrap input data A ----
-	xM12A: for ii in 0 to 29 generate
-		xLSB: if (ii < MAW) generate
-			dspA_M1(ii) <= M1_AA(ii);
-			dspA_M2(ii) <= M2_AA(ii);
-		end generate;
-		xMSB: if (ii >= MAW) generate
-			dspA_M1(ii) <= M1_AA(MAW-1);
-			dspA_M2(ii) <= M2_AA(MAW-1);
-		end generate;
-	end generate;
+	dspA_M1 <= SXT(M1_AA, 30);
+	dspA_M2 <= SXT(M2_AA, 30);
 
 	---- Output data ----
 	MP_12 <= dspP_M1;

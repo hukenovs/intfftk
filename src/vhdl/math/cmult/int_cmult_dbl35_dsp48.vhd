@@ -72,6 +72,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_signed.all;
+use ieee.std_logic_arith.all;
 
 library unisim;
 use unisim.vcomponents.DSP48E1;	
@@ -187,31 +188,14 @@ begin
 		
 	end generate;
 
-
 	---- Wrap input data B ----
-	xMB: for ii in 0 to BWD-1 generate
-		xLSB: if (ii < MBW) generate 
-			dspB_M1(ii) <= M1_BB(ii);
-			dspB_M2(ii) <= M2_BB(ii);
-		end generate;
-		xMSB: if (ii > (MBW-1)) generate
-			dspB_M1(ii) <= M1_BB(MBW-1);
-			dspB_M2(ii) <= M2_BB(MBW-1);
-		end generate;
-	end generate;	
-	
+	dspB_M1 <= SXT(M1_BB, BWD);
+	dspB_M2 <= SXT(M2_BB, BWD);
+
 	---- Wrap input data A ----
-	xMA: for ii in 0 to 34 generate
-		xLSB: if (ii < MAW) generate
-			dspA_M1(ii) <= M1_AA(ii);
-			dspA_M2(ii) <= M2_AA(ii);
-		end generate;
-		xMSB: if (ii > (MAW-1)) generate
-			dspA_M1(ii) <= M1_AA(MAW-1);
-			dspA_M2(ii) <= M2_AA(MAW-1);
-		end generate;
-	end generate;	
-	
+	dspA_M1 <= SXT(M1_AA, 35);
+	dspA_M2 <= SXT(M2_AA, 35);
+
 	---- Min value MBW = 19! ----
 	dsp1_48 <= dspP_M1(PWD-1-(BWD-MBW)-1 downto PWD-48-(BWD-MBW)-1);
 	dsp2_48 <= dspP_M2(PWD-1-(BWD-MBW)-1 downto PWD-48-(BWD-MBW)-1);

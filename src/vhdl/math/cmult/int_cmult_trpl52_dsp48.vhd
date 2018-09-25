@@ -72,6 +72,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_signed.all;
+use ieee.std_logic_arith.all;
 
 library unisim;
 use unisim.vcomponents.DSP48E1;	
@@ -187,28 +188,12 @@ begin
 	end generate;
 	
 	---- Wrap input data B ----
-	xMB: for ii in 0 to BWD-1 generate
-		xLSB: if (ii < MBW) generate 
-			dspB_M1(ii) <= M1_BB(ii);
-			dspB_M2(ii) <= M2_BB(ii);
-		end generate;
-		xMSB: if (ii > (MBW-1)) generate
-			dspB_M1(ii) <= M1_BB(MBW-1);
-			dspB_M2(ii) <= M2_BB(MBW-1);
-		end generate;
-	end generate;	
-	
+	dspB_M1 <= SXT(M1_BB, BWD);
+	dspB_M2 <= SXT(M2_BB, BWD);
+
 	---- Wrap input data A ----
-	xMA: for ii in 0 to 51 generate
-		xLSB: if (ii < MAW) generate
-			dspA_M1(ii) <= M1_AA(ii);
-			dspA_M2(ii) <= M2_AA(ii);
-		end generate;
-		xMSB: if (ii > (MAW-1)) generate
-			dspA_M1(ii) <= M1_AA(MAW-1);
-			dspA_M2(ii) <= M2_AA(MAW-1);
-		end generate;
-	end generate;	
+	dspA_M1 <= SXT(M1_AA, 52);
+	dspA_M2 <= SXT(M2_AA, 52);
 
 	---- Wrap add / sub ----
 	xADD: if (XALU = "ADD") generate
@@ -261,16 +246,9 @@ begin
 			begin
 				dspP_12 <= dspP_48(MAW-1 downto 0);
 				
-				xG48: for ii in 0 to 47 generate
-					xLOW: if (ii < MAW) generate
-						dsp1_DT(ii) <= dsp1_48(ii);
-						dsp2_DT(ii) <= dsp2_48(ii);
-					end generate;
-					xHIGH: if (ii > (MAW-1)) generate
-						dsp1_DT(ii) <= dsp1_48(MAW-1);
-						dsp2_DT(ii) <= dsp2_48(MAW-1);
-					end generate;
-				end generate;
+				---- Wrap 48-bit ports ----
+				dsp1_DT <= SXT(dsp1_48, 48);
+				dsp2_DT <= SXT(dsp2_48, 48);
 
 				---- Map adder ----
 				dspA_48 <= dsp1_DT(47 downto 18);
@@ -565,21 +543,14 @@ begin
 			begin
 				dspP_12 <= dspP_48(MAW-1 downto 0);
 				
-				xG48: for ii in 0 to 47 generate
-					xLOW: if (ii < MAW) generate
-						dsp1_DT(ii) <= dsp1_48(ii);
-						dsp2_DT(ii) <= dsp2_48(ii);
-					end generate;
-					xHIGH: if (ii > (MAW-1)) generate
-						dsp1_DT(ii) <= dsp1_48(MAW-1);
-						dsp2_DT(ii) <= dsp2_48(MAW-1);
-					end generate;
-				end generate;
+				---- Wrap 48-bit ports ----
+				dsp1_DT <= SXT(dsp1_48, 48);
+				dsp2_DT <= SXT(dsp2_48, 48);
 
 				---- Map adder ----
 				dspA_48 <= dsp1_DT(47 downto 18);
 				dspB_48 <= dsp1_DT(17 downto 00);
-				dspC_48 <= dsp2_DT when rising_edge(clk);		
+				dspC_48 <= dsp2_DT when rising_edge(clk);
 
 				xDSP_ADD: DSP48E2
 					generic map (
