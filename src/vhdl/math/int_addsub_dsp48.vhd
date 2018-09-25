@@ -79,6 +79,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
 
 library unisim;
 use unisim.vcomponents.DSP48E1;	
@@ -142,21 +143,13 @@ begin
 	end generate;
 	
 	---- C port 48-bit data ----
-	xFOR_C: for ii in 0 to 47 generate
-		xL: if (ii < DSPW) generate
-			dspC_RE(ii) <= IA_RE(ii);
-			dspC_IM(ii) <= IA_IM(ii);
-		end generate;
-		xH: if (ii > (DSPW-1)) generate
-			dspC_RE(ii) <= IA_RE(DSPW-1);
-			dspC_IM(ii) <= IA_IM(DSPW-1);
-		end generate;		
-	end generate;
+	dspC_RE <= SXT(IA_RE, 48);
+	dspC_IM <= SXT(IA_IM, 48);
 
-		OX_RE <= dspX_RE(DSPW downto 0);
-		OX_IM <= dspX_IM(DSPW downto 0);
-		OY_RE <= dspY_RE(DSPW downto 0);
-		OY_IM <= dspY_IM(DSPW downto 0);
+	OX_RE <= dspX_RE(DSPW downto 0);
+	OX_IM <= dspX_IM(DSPW downto 0);
+	OY_RE <= dspY_RE(DSPW downto 0);
+	OY_IM <= dspY_IM(DSPW downto 0);
 
 	
 	xDSP48E2: if (XSER = "NEW") generate
@@ -199,8 +192,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -268,8 +261,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -337,8 +330,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -406,8 +399,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -478,8 +471,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -616,8 +609,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -685,8 +678,8 @@ begin
 				CARRYINSEL 		=> (others=>'0'),
 				
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -715,9 +708,7 @@ begin
 				RSTP            => RST 
 			);				
 	end generate;	
-	
 end generate;
-
 
 
 xGEN_LOW: if (DSPW < 24) generate
@@ -1066,21 +1057,12 @@ xGEN_DBL: if (DSPW > 47) generate
 	signal dspC_YI		: std_logic;
 
 begin
-	---- generate 96-bit vectors ----
-	xFOR: for ii in 0 to 95 generate
-		xL: if (ii < DSPW) generate
-			dspA_RE(ii) <= IA_RE(ii);
-			dspA_IM(ii) <= IA_IM(ii);
-			dspB_RE(ii) <= IB_RE(ii);
-			dspB_IM(ii) <= IB_IM(ii);
-		end generate;
-		xH: if (ii > (DSPW-1)) generate
-			dspA_RE(ii) <= IA_RE(DSPW-1);
-			dspA_IM(ii) <= IA_IM(DSPW-1);
-			dspB_RE(ii) <= IB_RE(DSPW-1);
-			dspB_IM(ii) <= IB_IM(DSPW-1);
-		end generate;		
-	end generate;
+
+	---- Wrap 96-bit data ----
+	dspA_RE <= SXT(IA_RE, 96);
+	dspA_IM <= SXT(IA_IM, 96);
+	dspB_RE <= SXT(IB_RE, 96);
+	dspB_IM <= SXT(IB_IM, 96);
 
 	---- Create A:B 48-bit data ----
 	dspB_RE1 <= dspB_RE(17 downto 00);
@@ -1149,8 +1131,8 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> "010",
 				CARRYCASCIN		=> dspC_XR,
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1216,9 +1198,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_XR,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_XR,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1284,8 +1266,8 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> "010",
 				CARRYCASCIN		=> dspC_XI,
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1351,9 +1333,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_XI,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_XI,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1420,8 +1402,8 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> "010",
 				CARRYCASCIN		=> dspC_YR,
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1487,9 +1469,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_YR,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_YR,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1556,8 +1538,8 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> "010",
 				CARRYCASCIN		=> dspC_YI,
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1623,9 +1605,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_YI,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_YI,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1696,8 +1678,8 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> "010",
 				CARRYCASCIN		=> dspC_XR,
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1763,9 +1745,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_XR,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_XR,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -1898,9 +1880,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_XI,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_XI,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -2034,9 +2016,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_YR,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_YR,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -2103,8 +2085,8 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> "010",
 				CARRYCASCIN		=> dspC_YI,
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -2170,9 +2152,9 @@ begin
 				PCIN            => (others=>'0'),
 				CARRYINSEL 		=> (others=>'0'),
 				CARRYCASCIN		=> '0',
-				CARRYIN         => '0',           
-				MULTSIGNIN		=> '0',			
-				CARRYCASCOUT	=> dspC_YI,				
+				CARRYIN         => '0',
+				MULTSIGNIN		=> '0',
+				CARRYCASCOUT	=> dspC_YI,
 				-- Clock enables
 				CEA1            => '1',
 				CEA2            => '1',
@@ -2201,9 +2183,7 @@ begin
 				RSTP            => RST 
 			);
 			
-	end generate;	
-	
+	end generate;
 end generate;
-
 
 end int_addsub_dsp48;
