@@ -79,7 +79,6 @@ architecture mlt25x18_dsp48 of mlt25x18_dsp48 is
 
 	signal dspA		: std_logic_vector(29 downto 0);
 	signal dspB		: std_logic_vector(17 downto 0);
-	signal dspP		: std_logic_vector(47 downto 0);
 
 begin
 	
@@ -115,7 +114,7 @@ xOLD: if (XSERIES = "OLD") generate
 			B 				=> dspB, -- 18-bit input: B data input
 			C 				=> (others=>'0'),
 			D 				=> (others=>'0'),
-			P               => dspP,
+			P               => MLT_P,
 			PCOUT			=> open,
 			-- Control: Inputs/Status Bits
 			ALUMODE 		=> (others=>'0'),
@@ -186,7 +185,7 @@ xNEW: if (XSERIES = "NEW") generate
 			B 				=> dspB, -- 18-bit input: B data input
 			C 				=> (others=>'0'),
 			D 				=> (others=>'0'),
-			P               => dspP,
+			P               => MLT_P,
 			PCOUT			=> open,
 			-- Control: Inputs/Status Bits
 			ALUMODE 		=> (others=>'0'),
