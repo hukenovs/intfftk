@@ -13,9 +13,16 @@
 --		NFFT		- (p) - Number of stages = log2(FFT LENGTH)
 --		DATA_WIDTH	- (p) - Data width for signal imitator: 8-32 bits.
 --		TWDL_WIDTH	- (p) - Data width for twiddle factor : 16-24 bits.
+--		RAMB_TYPE		- (p) -	Cross-commutation type: "WRAP" / "CONT"
+--			"WRAP" - data valid strobe can be bursting (no need continuous valid),
+--			"CONT" - data valid must be continuous (strobe length = N/2 points);
+--
 --		FLY_FWD		- (s) - Use butterflies into Forward FFT: 1 - TRUE, 0 - FALSE
 --		DBG_FWD		- (p) - 1 - Debug in FFT (save file in FP32 on selected stage)			
---		XSERIES		- (p) -	FPGA Series: ULTRASCALE / 7SERIES
+--		XSERIES			- (p) -	FPGA Series: 
+--			"NEW" - ULTRASCALE,
+--			"OLD" - 6/7-SERIES;
+--
 --		USE_MLT		- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
 --
 -- where: (p) - generic parameter, (s) - signal.
@@ -64,6 +71,7 @@ architecture fft_double_test of fft_double_test is
 -- **************************************************************** --
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
+
 constant	NFFT 		: integer:=12; -- Number of stages = log2(FFT LENGTH)
 
 constant	DATA_WIDTH	: integer:=16; -- Data width for signal imitator	: 8-32.
@@ -74,6 +82,8 @@ constant	FLY_INV		: std_logic:='1'; -- 1 - Use butterflies for Forward FFT
 
 constant	XSERIES		: string:="OLD"; -- FPGA Series: ULTRA / 7SERIES
 constant	USE_MLT		: boolean:=FALSE; -- 1 - Use Multiplier for calculation M_PI
+
+constant	RAMB_TYPE	: string:="WRAP"; -- Cross-commutation type: WRAP / CONT
 
 -- **************************************************************** --
 -- ********* Signal declaration: clocks, reset, data etc. ********* --
@@ -190,7 +200,7 @@ end process;
 --------------------------------------------------------------------------------
 UUT: entity work.int_fft_ifft_pair
 	generic map ( 
-		TD				=> 0.1 ns,	
+		RAMB_TYPE		=> RAMB_TYPE,
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
 		XSERIES			=> XSERIES,	
@@ -215,10 +225,11 @@ UUT: entity work.int_fft_ifft_pair
 		FLY_FWD			=> fly_fwd,
 		FLY_INV			=> fly_inv
 	);
-
+	
+--------------------------------------------------------------------------------
 UUT_SC: entity work.int_fft_ifft_scaled
 	generic map ( 
-		TD				=> 0.1 ns,	
+		RAMB_TYPE		=> RAMB_TYPE,
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
 		XSERIES			=> XSERIES,	

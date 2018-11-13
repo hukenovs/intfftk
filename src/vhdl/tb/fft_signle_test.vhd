@@ -166,8 +166,7 @@ end process;
 
 --------------------------------------------------------------------------------
 UUT: entity work.int_fft_single_path
-	generic map ( 
-		TD				=> 0.1 ns,	
+	generic map (
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
 		XSERIES			=> XSERIES,	
@@ -189,19 +188,19 @@ UUT: entity work.int_fft_single_path
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd
 	);
-	
+
+--------------------------------------------------------------------------------
 UUT_SC: entity work.int_fft_single_scaled
-	generic map ( 
-		TD				=> 0.1 ns,	
+	generic map (	
 		DATA_WIDTH		=> DATA_WIDTH,
-		TWDL_WIDTH		=> TWDL_WIDTH,	
-		XSERIES			=> XSERIES,	
-		NFFT			=> NFFT,	
-		USE_MLT			=> USE_MLT	
+		TWDL_WIDTH		=> TWDL_WIDTH,
+		XSERIES			=> XSERIES,
+		NFFT			=> NFFT,
+		USE_MLT			=> USE_MLT
 	)   
 	port map ( 
 		---- Common signals ----
-		RESET			=> reset,	
+		RESET			=> reset,
 		CLK				=> clk,	
 		---- Input data ----
 		DI_RE			=> di_re,
@@ -214,4 +213,5 @@ UUT_SC: entity work.int_fft_single_scaled
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd
 	);
+	
 end fft_signle_test; 

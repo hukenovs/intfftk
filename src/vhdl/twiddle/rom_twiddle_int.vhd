@@ -97,7 +97,6 @@ use ieee.math_real.all;
 
 entity rom_twiddle_int is 
 	generic(
-		TD			: time:=0.5ns;		--! Simulation time
 		AWD			: integer:=16;		--! Sin/cos MSB (Magnitude = 2**(Amag-1))
 		NFFT		: integer:=16;		--! FFT lenght
 		STAGE 		: integer:=15;		--! FFT stages
@@ -176,10 +175,10 @@ pr_ww: process(clk) is
 begin
 	if rising_edge(clk) then
 		if (div = '0') then
-			ww_rom <= ram after td;
+			ww_rom <= ram;
 		else      
-			ww_rom(2*AWD-1 downto 1*AWD) <= not ram(1*AWD-1 downto 0*AWD) + '1' after td;
-			ww_rom(1*AWD-1 downto 0*AWD) <= ram(2*AWD-1 downto 1*AWD) after td;
+			ww_rom(2*AWD-1 downto 1*AWD) <= not ram(1*AWD-1 downto 0*AWD) + '1';
+			ww_rom(1*AWD-1 downto 0*AWD) <= ram(2*AWD-1 downto 1*AWD);
 		end if;
 	end if;
 end process; 
@@ -187,16 +186,16 @@ end process;
 ---- Counter / Address increment ----
 xCNT: if (STAGE > 0) generate	
 	addr <= cnt(STAGE-2 downto 0);		
-	div  <= cnt(STAGE-1) after td when rising_edge(clk);
+	div  <= cnt(STAGE-1) when rising_edge(clk);
 
 	---- Read counter signal ----
 	pr_cnt: process(clk) is
 	begin
 		if rising_edge(clk) then
 			if (rst = '1') then
-				cnt	<=	(others	=>	'0') after td;			
+				cnt	<=	(others	=>	'0');			
 			elsif (ww_en = '1') then
-				cnt <= cnt + '1' after td;
+				cnt <= cnt + '1';
 			end if;
 		end if;
 	end process;
@@ -208,8 +207,8 @@ xSTD: if (STAGE < 11) generate
 	ww_re <= ww_rom(1*AWD-1 downto 0*AWD);	
 	ww_im <= ww_rom(2*AWD-1 downto 1*AWD);
 	
-	--ram <= ARR_DBL(conv_integer(unsigned(addr))) after td when rising_edge(clk) and WW_EN = '1';	
-	ram <= ARR_DBL(conv_integer(unsigned(addr))) after td when rising_edge(clk);	
+	--ram <= ARR_DBL(conv_integer(unsigned(addr))) when rising_edge(clk) and WW_EN = '1';	
+	ram <= ARR_DBL(conv_integer(unsigned(addr))) when rising_edge(clk);	
 end generate;		
 
 ---- Long stage ----
@@ -221,11 +220,11 @@ xLNG: if (STAGE >= 11) generate
 begin	
 	addrx <= addr(STAGE-2 downto STAGE-10);	
 	---- Read data from RAMB ----
-	ram <= ARR_DBL(conv_integer(unsigned(addrx))) after td when rising_edge(clk);
+	ram <= ARR_DBL(conv_integer(unsigned(addrx))) when rising_edge(clk);
 	
 	count <= addr(STAGE-11 downto 0);
 	
-	cntzz <= count after td when rising_edge(clk);	
+	cntzz <= count when rising_edge(clk);	
 	
 	xTAY_DSP: entity work.row_twiddle_tay
 		generic map (
