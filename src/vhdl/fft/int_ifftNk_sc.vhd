@@ -61,11 +61,11 @@ use ieee.std_logic_1164.all;
 entity int_ifftNk_sc is
 	generic (
 		IS_SIM		: boolean:=FALSE;		--! Simulation model: TRUE / FALSE
-		TD			: time:=0.5ns;			--! Simulation time		
-		NFFT		: integer:=5;			--! Number of FFT stages     		
+		NFFT		: integer:=5;			--! Number of FFT stages
+		RAMB_TYPE	: string:="WRAP";		--! Cross-commutation type: WRAP / CONT
 		DATA_WIDTH	: integer:=16;			--! Input data width
 		TWDL_WIDTH	: integer:=16;			--! Twiddle factor data width	
-		XSER		: string:="OLD";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";											
+		XSER		: string:="OLD";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
 		USE_MLT		: boolean:=FALSE		--! Use multipliers in Twiddle factors
 	);
 	port (
@@ -140,7 +140,7 @@ signal ww_en		: std_logic_vector(NFFT-1 downto 0);
 
 begin
 
-ab_en(0) <= DI_ENA;		 
+ab_en(0) <= DI_ENA;
 ia_re(0) <= DI_RE0;
 ia_im(0) <= DI_IM0;
 ib_re(0) <= DI_RE1;
@@ -252,46 +252,58 @@ xDELAYS: for ii in 0 to NFFT-2 generate
 	di_bb(ii)(2*DATA_WIDTH-1 downto 0) <= xb_im(ii) & xb_re(ii);	
 	di_en(ii) <= xx_vl(ii);
 	
-	xDELAY_LINE : entity work.int_delay_line
-		generic map(
-			NWIDTH		=> 2*DATA_WIDTH,
-			NFFT		=> NFFT,
-			STAGE		=> NFFT-ii-2	
-		)
-		port map (
-			DI_AA		=> di_aa(ii),
-			DI_BB		=> di_bb(ii),
-			DI_EN		=> di_en(ii),  
-			DO_AA		=> do_aa(ii),
-			DO_BB		=> do_bb(ii),
-			DO_VL		=> do_en(ii),
-			RST 		=> rst,            
-			CLK 		=> clk               
-		);
+	xCONT_IN: if (RAMB_TYPE = "CONT") generate	
+		xDELAY_LINE : entity work.int_delay_line
+			generic map(
+				NWIDTH		=> 2*DW,
+				NFFT		=> NFFT,
+				STAGE		=> NFFT-ii-2	
+			)
+			port map (
+				DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
+				DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+				DI_EN		=> di_en(ii),  
+				DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
+				DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+				DO_VL		=> do_en(ii),
+				RST 		=> rst,
+				CLK 		=> clk
+			);
+	end generate;
+	xWRAP_IN: if (RAMB_TYPE = "WRAP") generate	
+		xDELAY_LINE : entity work.int_delay_wrap
+			generic map(
+				NWIDTH		=> 2*DW,
+				NFFT		=> NFFT,
+				STAGE		=> NFFT-ii-2
+			)
+			port map (
+				DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
+				DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+				DI_EN		=> di_en(ii),  
+				DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
+				DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+				DO_VL		=> do_en(ii),
+				RST 		=> rst,
+				CLK 		=> clk
+			);
+	end generate;
 		
 	ia_re(ii+1) <= do_aa(ii)(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
 	ia_im(ii+1) <= do_aa(ii)(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
 	ib_re(ii+1) <= do_bb(ii)(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
-	ib_im(ii+1) <= do_bb(ii)(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);	
+	ib_im(ii+1) <= do_bb(ii)(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
 	ab_en(ii+1) <= do_en(ii); 
-end generate;	  
+end generate;
 
 pr_out: process(clk) is
 begin
 	if rising_edge(clk) then
-		if (rst = '1') then
-			DO_RE0 <= (others => '0'); 
-			DO_IM0 <= (others => '0'); 
-			DO_RE1 <= (others => '0'); 
-			DO_IM1 <= (others => '0'); 
-			DO_VAL <= '0'; 
-		else
-			DO_RE0 <= xa_re(NFFT-1); 
-			DO_IM0 <= xa_im(NFFT-1); 
-			DO_RE1 <= xb_re(NFFT-1); 
-			DO_IM1 <= xb_im(NFFT-1); 
-			DO_VAL <= xx_vl(NFFT-1);
-		end if;
+		DO_RE0 <= xa_re(NFFT-1);
+		DO_IM0 <= xa_im(NFFT-1);
+		DO_RE1 <= xb_re(NFFT-1);
+		DO_IM1 <= xb_im(NFFT-1);
+		DO_VAL <= xx_vl(NFFT-1);
 	end if;
 end process;
 

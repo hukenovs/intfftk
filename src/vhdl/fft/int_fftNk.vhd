@@ -59,10 +59,10 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 entity int_fftNk is
-	generic (													    
-		IS_SIM		: boolean:=FALSE;		--! Simulation model: TRUE / FALSE
-		TD			: time:=0.5ns;			--! Simulation time		
-		NFFT		: integer:=5;			--! Number of FFT stages     		
+	generic (
+		IS_SIM		: boolean:=FALSE;		--! Simulation model: TRUE / FALSE	
+		NFFT		: integer:=5;			--! Number of FFT stages
+		RAMB_TYPE	: string:="WRAP";		--! Cross-commutation type: WRAP / CONT
 		DATA_WIDTH	: integer:=16;			--! Input data width
 		TWDL_WIDTH	: integer:=16;			--! Twiddle factor data width	
 		XSER		: string:="OLD";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
@@ -148,13 +148,12 @@ ib_im(0)(DATA_WIDTH-1 downto 0) <= DI_IM1;
 
 xCALC: for ii in 0 to NFFT-1 generate
 
-begin			
+begin
 
 	---- Butterflies ----
 	xBUTTERFLY: entity work.int_dif2_fly
 		generic map ( 
-			IS_SIM 	=> IS_SIM,
-			TD 		=> TD,
+			IS_SIM 	=> IS_SIM
 			STAGE 	=> NFFT-ii-1,
 			DTW 	=> DATA_WIDTH+ii,
 			TFW 	=> TWDL_WIDTH,
@@ -184,7 +183,6 @@ begin
 
 	xTWIDDLE: entity work.rom_twiddle_int
 		generic map (
-			TD		=> TD,
 			AWD		=> TWDL_WIDTH,
 			NFFT	=> NFFT,
 			STAGE	=> NFFT-ii-1,
@@ -253,46 +251,58 @@ xDELAYS: for ii in 0 to NFFT-2 generate
 	di_bb(ii)(2*DW-1 downto 0) <= xb_im(ii)(DW-1 downto 0) & xb_re(ii)(DW-1 downto 0);	
 	di_en(ii) <= xx_vl(ii);
 	
-	xDELAY_LINE : entity work.int_delay_line
-		generic map(
-			NWIDTH		=> 2*DW,
-			NFFT		=> NFFT,
-			STAGE		=> ii	
-		)
-		port map (
-			DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
-			DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
-			DI_EN		=> di_en(ii),  
-			DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
-			DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
-			DO_VL		=> do_en(ii),
-			RST 		=> rst,
-			CLK 		=> clk
-		);
-
+	xCONT_IN: if (RAMB_TYPE = "CONT") generate
+		xDELAY_LINE : entity work.int_delay_line
+			generic map(
+				NWIDTH		=> 2*DW,
+				NFFT		=> NFFT,
+				STAGE		=> ii
+			)
+			port map (
+				DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
+				DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+				DI_EN		=> di_en(ii),  
+				DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
+				DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+				DO_VL		=> do_en(ii),
+				RST 		=> rst,
+				CLK 		=> clk
+			);
+	end generate;
+	xWRAP_IN: if (RAMB_TYPE = "WRAP") generate
+		xDELAY_LINE : entity work.int_delay_wrap
+			generic map(
+				NWIDTH		=> 2*DW,
+				NFFT		=> NFFT,
+				STAGE		=> ii
+			)
+			port map (
+				DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
+				DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+				DI_EN		=> di_en(ii),  
+				DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
+				DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+				DO_VL		=> do_en(ii),
+				RST 		=> rst,
+				CLK 		=> clk
+			);
+	end generate;
+	
 	ia_re(ii+1)(DW-1 downto 0) <= do_aa(ii)(1*DW-1 downto 0*DW);
 	ia_im(ii+1)(DW-1 downto 0) <= do_aa(ii)(2*DW-1 downto 1*DW);
 	ib_re(ii+1)(DW-1 downto 0) <= do_bb(ii)(1*DW-1 downto 0*DW);
-	ib_im(ii+1)(DW-1 downto 0) <= do_bb(ii)(2*DW-1 downto 1*DW);	
+	ib_im(ii+1)(DW-1 downto 0) <= do_bb(ii)(2*DW-1 downto 1*DW);
 	ab_en(ii+1) <= do_en(ii); 
 end generate;
 
 pr_out: process(clk) is
 begin
 	if rising_edge(clk) then
-		if (rst = '1') then
-			DO_RE0 <= (others => '0'); 
-			DO_IM0 <= (others => '0'); 
-			DO_RE1 <= (others => '0'); 
-			DO_IM1 <= (others => '0'); 
-			DO_VAL <= '0'; 
-		else
-			DO_RE0 <= xa_re(NFFT-1); 
-			DO_IM0 <= xa_im(NFFT-1); 
-			DO_RE1 <= xb_re(NFFT-1); 
-			DO_IM1 <= xb_im(NFFT-1); 
-			DO_VAL <= xx_vl(NFFT-1);
-		end if;
+		DO_RE0 <= xa_re(NFFT-1); 
+		DO_IM0 <= xa_im(NFFT-1); 
+		DO_RE1 <= xb_re(NFFT-1); 
+		DO_IM1 <= xb_im(NFFT-1); 
+		DO_VAL <= xx_vl(NFFT-1);
 	end if;
 end process;
 
