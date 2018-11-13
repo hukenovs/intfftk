@@ -72,15 +72,15 @@ architecture fft_double_test of fft_double_test is
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
 
-constant	NFFT 		: integer:=12; -- Number of stages = log2(FFT LENGTH)
+constant	NFFT 		: integer:=10; -- Number of stages = log2(FFT LENGTH)
 
 constant	DATA_WIDTH	: integer:=16; -- Data width for signal imitator	: 8-32.
-constant	TWDL_WIDTH	: integer:=24; -- Data width for twiddle factor 	: 16-24.
+constant	TWDL_WIDTH	: integer:=16; -- Data width for twiddle factor 	: 16-24.
 
 constant	FLY_FWD		: std_logic:='1'; -- 1 - Use butterflies for Forward FFT	
 constant	FLY_INV		: std_logic:='1'; -- 1 - Use butterflies for Forward FFT	
 
-constant	XSERIES		: string:="OLD"; -- FPGA Series: ULTRA / 7SERIES
+constant	XSERIES		: string:="NEW"; -- FPGA Series: ULTRA / 7SERIES
 constant	USE_MLT		: boolean:=FALSE; -- 1 - Use Multiplier for calculation M_PI
 
 constant	RAMB_TYPE	: string:="WRAP"; -- Cross-commutation type: WRAP / CONT
@@ -100,13 +100,21 @@ signal d0_im			: std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0');
 signal d1_im			: std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
 signal di_en			: std_logic:='0';
 
-signal do_re			: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
-signal do_im 			: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
-signal do_vl			: std_logic;
+signal do_re_wrap		: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
+signal do_im_wrap 		: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
+signal do_vl_wrap		: std_logic;
 
-signal sc_re			: std_logic_vector(DATA_WIDTH-1 downto 0);
-signal sc_im 			: std_logic_vector(DATA_WIDTH-1 downto 0);
-signal sc_vl			: std_logic;
+signal do_re_cont		: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
+signal do_im_cont 		: std_logic_vector(NFFT+NFFT+DATA_WIDTH-1 downto 0);
+signal do_vl_cont		: std_logic;
+
+signal sc_re_wrap		: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_im_wrap 		: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_vl_wrap		: std_logic;
+
+signal sc_re_cont		: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_im_cont 		: std_logic_vector(DATA_WIDTH-1 downto 0);
+signal sc_vl_cont		: std_logic;
 
 
 begin
@@ -137,7 +145,7 @@ begin
 		-- wait for 100 ns;
 		wait until (start = '1');
 		
-		lp_inf: for jj in 0 to 63 loop	   
+		lp_inf: for jj in 0 to 7 loop	   
 
 			file_open( fl_data, fl_path, read_mode );				
 
@@ -155,10 +163,9 @@ begin
 					d1_im <= conv_std_logic_vector( lt4, DATA_WIDTH );
 					di_en <= '1'; 
 					
-					-- wait until rising_edge(clk);
-					-- di_en <= '0';
-					-- di_re <= (others => '0');
-					-- di_im <= (others => '0');						
+					wait until rising_edge(clk);
+					di_en <= '0';
+					
 			end loop;
 			
 			wait until rising_edge(clk);
@@ -168,22 +175,22 @@ begin
 			d0_im <= (others => '0');
 			d1_im <= (others => '0');			
 			
-			lp_Nk: for ii in 0 to (2**NFFT-1) loop
+			lp_Nk: for ii in 0 to (2**NFFT-1)-1 loop
 				wait until rising_edge(clk);
 			end loop;			
 
 			file_close(fl_data);
 			
-			wait until rising_edge(clk);
-			di_en <= '0';
-			d0_re <= (others => '0');
-			d1_re <= (others => '0');
-			d0_im <= (others => '0');
-			d1_im <= (others => '0');
+--			wait until rising_edge(clk);
+--			di_en <= '0';
+--			d0_re <= (others => '0');
+--			d1_re <= (others => '0');
+--			d0_im <= (others => '0');
+--			d1_im <= (others => '0');
 			
-			lp_32k: for ii in 0 to 31 loop
-				wait until rising_edge(clk);
-			end loop;
+--			lp_32k: for ii in 0 to 31 loop
+--				wait until rising_edge(clk);
+--			end loop;
 			
 		end loop;
 		
@@ -198,33 +205,108 @@ begin
 end process; 
 
 --------------------------------------------------------------------------------
+wr_dout: process(clk) is    -- write file_io.out (++ done goes to '1')
+	file log0 					: TEXT open WRITE_MODE is "../../../../../math/dout_un_wrap.dat";
+	file log1 					: TEXT open WRITE_MODE is "../../../../../math/dout_un_cont.dat";
+	file log2 					: TEXT open WRITE_MODE is "../../../../../math/dout_sc_wrap.dat";
+	file log3 					: TEXT open WRITE_MODE is "../../../../../math/dout_sc_cont.dat";
+	variable str0 				: LINE;
+	variable str1 				: LINE;
+	variable str2 				: LINE;
+	variable str3 				: LINE;
+	variable spc 				: string(1 to 4) := (others => ' ');	
+begin
+	if rising_edge(clk) then	
+		---- Unscaled data output ----
+		-- Wrapped --
+		if (do_vl_wrap = '1') then
+			write(str0, CONV_INTEGER(do_re_wrap(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+			write(str0, spc);			
+			write(str0, CONV_INTEGER(do_im_wrap(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+			writeline(log0, str0);
+		end if;
+		-- Continuous --
+		if (do_vl_cont = '1') then
+			write(str1, CONV_INTEGER(do_re_cont(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+			write(str1, spc);			
+			write(str1, CONV_INTEGER(do_im_cont(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+			writeline(log1, str1);
+		end if;
+		---- Scaled data output ----
+		-- Wrapped --
+		if (sc_vl_wrap = '1') then
+			write(str2, CONV_INTEGER(sc_re_wrap), LEFT);
+			write(str2, spc);			
+			write(str2, CONV_INTEGER(sc_im_wrap), LEFT);
+			writeline(log2, str2);
+		end if;
+		-- Continuous --
+		if (sc_vl_cont = '1') then
+			write(str3, CONV_INTEGER(sc_re_cont), LEFT);
+			write(str3, spc);			
+			write(str3, CONV_INTEGER(sc_im_cont), LEFT);
+			writeline(log3, str3);
+		end if;	
+	end if;
+end process;
+
+
+--------------------------------------------------------------------------------
 UUT: entity work.int_fft_ifft_pair
 	generic map ( 
 		RAMB_TYPE		=> RAMB_TYPE,
 		DATA_WIDTH		=> DATA_WIDTH,
-		TWDL_WIDTH		=> TWDL_WIDTH,	
-		XSERIES			=> XSERIES,	
-		NFFT			=> NFFT,	
-		USE_MLT			=> USE_MLT	
+		TWDL_WIDTH		=> TWDL_WIDTH,
+		XSERIES			=> XSERIES,
+		NFFT			=> NFFT,
+		USE_MLT			=> USE_MLT
 	)   
 	port map ( 
 		---- Common signals ----
-		RESET			=> reset,	
+		RESET			=> reset,
 		CLK				=> clk,	
 		---- Input data ----
 		D0_RE			=> d0_re,
 		D1_RE			=> d1_re,
 		D0_IM			=> d0_im,
 		D1_IM			=> d1_im,
-		DI_EN			=> di_en,		
+		DI_EN			=> di_en,
 		---- Output data ----
-		DO_RE			=> do_re, 		
-		DO_IM			=> do_im, 		
-		DO_VL			=> do_vl,
+		DO_RE			=> do_re_wrap,
+		DO_IM			=> do_im_wrap,
+		DO_VL			=> do_vl_wrap,
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd,
 		FLY_INV			=> fly_inv
 	);
+	
+UUT_CONT: entity work.int_fft_ifft_pair
+	generic map ( 
+		RAMB_TYPE		=> "CONT",
+		DATA_WIDTH		=> DATA_WIDTH,
+		TWDL_WIDTH		=> TWDL_WIDTH,
+		XSERIES			=> XSERIES,
+		NFFT			=> NFFT,
+		USE_MLT			=> USE_MLT
+	)   
+	port map ( 
+		---- Common signals ----
+		RESET			=> reset,
+		CLK				=> clk,	
+		---- Input data ----
+		D0_RE			=> d0_re,
+		D1_RE			=> d1_re,
+		D0_IM			=> d0_im,
+		D1_IM			=> d1_im,
+		DI_EN			=> di_en,
+		---- Output data ----
+		DO_RE			=> do_re_cont,
+		DO_IM			=> do_im_cont,
+		DO_VL			=> do_vl_cont,
+		---- Butterflies ----
+		FLY_FWD			=> fly_fwd,
+		FLY_INV			=> fly_inv
+	);	
 	
 --------------------------------------------------------------------------------
 UUT_SC: entity work.int_fft_ifft_scaled
@@ -232,27 +314,54 @@ UUT_SC: entity work.int_fft_ifft_scaled
 		RAMB_TYPE		=> RAMB_TYPE,
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
-		XSERIES			=> XSERIES,	
-		NFFT			=> NFFT,	
-		USE_MLT			=> USE_MLT	
+		XSERIES			=> XSERIES,
+		NFFT			=> NFFT,
+		USE_MLT			=> USE_MLT
 	)   
 	port map ( 
 		---- Common signals ----
-		RESET			=> reset,	
+		RESET			=> reset,
 		CLK				=> clk,	
 		---- Input data ----
 		D0_RE			=> d0_re,
 		D1_RE			=> d1_re,
 		D0_IM			=> d0_im,
 		D1_IM			=> d1_im,
-		DI_EN			=> di_en,		
+		DI_EN			=> di_en,
 		---- Output data ----
-		DO_RE			=> sc_re, 		
-		DO_IM			=> sc_im, 		
-		DO_VL			=> sc_vl,
+		DO_RE			=> sc_re_wrap,
+		DO_IM			=> sc_im_wrap,
+		DO_VL			=> sc_vl_wrap,
+		---- Butterflies ----
+		FLY_FWD			=> fly_fwd,
+		FLY_INV			=> fly_inv
+	);
+	
+UUT_SC_CONT: entity work.int_fft_ifft_scaled
+	generic map ( 
+		RAMB_TYPE		=> "CONT",
+		DATA_WIDTH		=> DATA_WIDTH,
+		TWDL_WIDTH		=> TWDL_WIDTH,	
+		XSERIES			=> XSERIES,
+		NFFT			=> NFFT,
+		USE_MLT			=> USE_MLT
+	)   
+	port map ( 
+		---- Common signals ----
+		RESET			=> reset,
+		CLK				=> clk,	
+		---- Input data ----
+		D0_RE			=> d0_re,
+		D1_RE			=> d1_re,
+		D0_IM			=> d0_im,
+		D1_IM			=> d1_im,
+		DI_EN			=> di_en,
+		---- Output data ----
+		DO_RE			=> sc_re_cont,
+		DO_IM			=> sc_im_cont,
+		DO_VL			=> sc_vl_cont,
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd,
 		FLY_INV			=> fly_inv
 	);	
-	
 end fft_double_test; 

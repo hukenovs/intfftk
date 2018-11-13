@@ -165,7 +165,7 @@ begin
 	-------- SUM = (A + B), DIF = (A-B) --------
 	xADD_RE: entity work.int_addsub_dsp48
 		generic map (
-			DSPW	=> DTW,
+			DSPW	=> DTW-1,
 			XSER 	=> XSER
 		)
 		port map (

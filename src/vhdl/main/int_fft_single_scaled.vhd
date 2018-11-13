@@ -159,6 +159,7 @@ xFFT: entity work.int_fftNk_sc
 	generic map (
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
+		RAMB_TYPE	=> "CONT",
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
 		XSER		=> XSERIES,

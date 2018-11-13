@@ -154,7 +154,6 @@ begin
 	xBUTTERFLY: entity work.int_dit2_fly_sc
 		generic map ( 
 			IS_SIM 	=> IS_SIM,
-			TD 		=> TD,
 			STAGE 	=> ii,
 			DTW 	=> DATA_WIDTH,
 			TFW 	=> TWDL_WIDTH,
@@ -181,10 +180,8 @@ begin
 		); 
 		
 	---- Twiddle factor ----
-
 	xTWIDDLE: entity work.rom_twiddle_int
 		generic map (
-			TD		=> TD,
 			AWD		=> TWDL_WIDTH,
 			NFFT	=> NFFT,
 			STAGE	=> ii,
@@ -255,16 +252,16 @@ xDELAYS: for ii in 0 to NFFT-2 generate
 	xCONT_IN: if (RAMB_TYPE = "CONT") generate	
 		xDELAY_LINE : entity work.int_delay_line
 			generic map(
-				NWIDTH		=> 2*DW,
+				NWIDTH		=> 2*DATA_WIDTH,
 				NFFT		=> NFFT,
 				STAGE		=> NFFT-ii-2	
 			)
 			port map (
-				DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
-				DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+				DI_AA		=> di_aa(ii)(2*DATA_WIDTH-1 downto 0),
+				DI_BB		=> di_bb(ii)(2*DATA_WIDTH-1 downto 0),
 				DI_EN		=> di_en(ii),  
-				DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
-				DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+				DO_AA		=> do_aa(ii)(2*DATA_WIDTH-1 downto 0),
+				DO_BB		=> do_bb(ii)(2*DATA_WIDTH-1 downto 0),
 				DO_VL		=> do_en(ii),
 				RST 		=> rst,
 				CLK 		=> clk
@@ -273,16 +270,16 @@ xDELAYS: for ii in 0 to NFFT-2 generate
 	xWRAP_IN: if (RAMB_TYPE = "WRAP") generate	
 		xDELAY_LINE : entity work.int_delay_wrap
 			generic map(
-				NWIDTH		=> 2*DW,
+				NWIDTH		=> 2*DATA_WIDTH,
 				NFFT		=> NFFT,
 				STAGE		=> NFFT-ii-2
 			)
 			port map (
-				DI_AA		=> di_aa(ii)(2*DW-1 downto 0),
-				DI_BB		=> di_bb(ii)(2*DW-1 downto 0),
+				DI_AA		=> di_aa(ii)(2*DATA_WIDTH-1 downto 0),
+				DI_BB		=> di_bb(ii)(2*DATA_WIDTH-1 downto 0),
 				DI_EN		=> di_en(ii),  
-				DO_AA		=> do_aa(ii)(2*DW-1 downto 0),
-				DO_BB		=> do_bb(ii)(2*DW-1 downto 0),
+				DO_AA		=> do_aa(ii)(2*DATA_WIDTH-1 downto 0),
+				DO_BB		=> do_bb(ii)(2*DATA_WIDTH-1 downto 0),
 				DO_VL		=> do_en(ii),
 				RST 		=> rst,
 				CLK 		=> clk

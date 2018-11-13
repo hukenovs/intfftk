@@ -94,7 +94,6 @@ end int_fft_ifft_scaled;
 architecture int_fft_ifft_scaled of int_fft_ifft_scaled is   
 
 signal rstp				: std_logic;
-signal rstn				: std_logic;
 
 ---------------- Input data ----------------
 signal di_d0			: std_logic_vector(2*DATA_WIDTH-1 downto 0);
@@ -144,7 +143,6 @@ signal dx_en			: std_logic;
 begin
 
 rstp <= not reset when rising_edge(clk);
-rstn <= reset when rising_edge(clk);
 
 di_d0 <= D0_IM & D0_RE;
 di_d1 <= D1_IM & D1_RE;
@@ -202,6 +200,7 @@ xFFT: entity work.int_fftNk_sc
 	generic map (
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
+		RAMB_TYPE	=> RAMB_TYPE,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
 		XSER		=> XSERIES,
@@ -237,7 +236,8 @@ xIFFT: entity work.int_ifftNk_sc
 	generic map (
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
-		DATA_WIDTH	=> DATA_WIDTH+NFFT,
+		RAMB_TYPE	=> RAMB_TYPE,		
+		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
 		XSER		=> XSERIES,
 		USE_MLT		=> USE_MLT
@@ -271,7 +271,7 @@ xCONT_OUT: if (RAMB_TYPE = "CONT") generate
 		generic map (
 			BITREV		=> TRUE,
 			ADDR 		=> NFFT,
-			DATA		=> 2*(2*NFFT+DATA_WIDTH)
+			DATA		=> 2*DATA_WIDTH
 		)
 		port map (
 			clk 		=> clk,
@@ -298,13 +298,13 @@ xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
 			clk  		=> clk,
 			rst			=> rstp,
 		
-			dt_int0		=> di_d0,
-			dt_int1		=> di_d1,
-			dt_en01		=> di_en,
-
-			dt_rev0		=> da_dt,
-			dt_rev1		=> db_dt,
-			dt_vl01		=> di_ena
+			dt_int0		=> dt_int0, 
+			dt_int1		=> dt_int1, 
+			dt_en01		=> dt_en01,
+			
+			dt_rev0		=> open,
+			dt_rev1		=> open,
+			dt_vl01		=> open
 		);
 end generate;
 
@@ -315,15 +315,15 @@ end generate;
 xOUT_BUF : entity work.outbuf_half_path
 	generic map (
 		ADDR 		=> NFFT,
-		DATA		=> 2*(DATA_WIDTH)
+		DATA		=> 2*DATA_WIDTH
 	)
 	port map (
 		clk 		=> clk,
 		reset 		=> rstp,		
 
-		da_dt		=> dt_int0, --dt_rev0,
-		db_dt		=> dt_int1, --dt_rev1,
-		ab_vl		=> dt_en01, --dt_vl01,
+		da_dt		=> dt_int0,
+		db_dt		=> dt_int1,
+		ab_vl		=> dt_en01,
 
 		do_dt		=> qx_dt,
 		do_en		=> dx_en	
