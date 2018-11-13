@@ -3,7 +3,8 @@
 -- Title       : iobuf_wrap_int2
 -- Design      : fpfftk
 -- Author      : Kapitanov
--- Company     :
+-- Company     : 
+-- E-mail      : sallador@bk.ru
 --
 -------------------------------------------------------------------------------
 --
@@ -36,6 +37,8 @@
 --        Data out: (interleave-2)
 --            DOx: .............0..2..4..6...
 --            DOx: .............1..3..5..7...
+--
+--  NB! See the difference between 'iobuf_flow_int2' & 'iobuf_wrap_int2' components!
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -72,7 +75,6 @@ use ieee.std_logic_unsigned.all;
 
 entity iobuf_wrap_int2 is
 	generic (
-		TD			: time:=0.1ns;   --! Simulation time
 		BITREV		: boolean:=FALSE;--! Bit-reverse mode (FALSE - int2-to-half, TRUE - half-to-int2)
 		DATA		: integer:= 32;  --! Data Width
 	    ADDR		: integer:= 10   --! Address depth
@@ -218,12 +220,12 @@ begin
 pr_cnt1st: process(clk) is
 begin
 	if rising_edge(clk) then
-		wr_1zz <= wr_1st after td;
+		wr_1zz <= wr_1st;
 		if (rst = '1') then
-			wr_1st <= '0' after td;
+			wr_1st <= '0';
 		else
 			if (sw_adr(sw_adr'left) = '1') then
-				wr_1st <= '1' after td;
+				wr_1st <= '1';
 			end if;	
 		end if;
 	end if;
@@ -234,94 +236,94 @@ pr_del: process(clk) is
 begin
 	if rising_edge(clk) then
 		if (rst = '1') then
-			sw_cnt <= (0 => '1', others => '0') after td;
-			sw_adr <= (others => '0') after td;
+			sw_cnt <= (0 => '1', others => '0');
+			sw_adr <= (others => '0');
 
-			in_cnt <= 1 after td;
-			WR_MSB <= INC_MSB(0) after td;
-			WR_DEL <= INC_DEL(0) after td;
-			WR_ADD <= INC_ADD(0) after td;
+			in_cnt <= 1;
+			WR_MSB <= INC_MSB(0);
+			WR_DEL <= INC_DEL(0);
+			WR_ADD <= INC_ADD(0);
 		else
 			if (dt_en01 = '1') then				
-				sw_adr <= sw_adr + '1' after td;
+				sw_adr <= sw_adr + '1';
 				---- Counter for WR0 / WR1 ----
 				if (sw_cnt(sw_cnt'left) = '1') then
-					sw_cnt <= (0 => '1', others => '0') after td;
+					sw_cnt <= (0 => '1', others => '0');
 				else
-					sw_cnt <= sw_cnt + '1' after td;
+					sw_cnt <= sw_cnt + '1';
 				end if;					
 
 				---- Counter for Arrays ----
 				if (sw_cnt(sw_cnt'left) = '1') then	
 					if (in_cnt = (ADDR-1)) then
-						in_cnt <= 0 after td;
+						in_cnt <= 0;
 					else
-						in_cnt <= in_cnt + 1 after td;
+						in_cnt <= in_cnt + 1;
 					end if;
-					WR_MSB <= INC_MSB(in_cnt) after td;
-					WR_DEL <= INC_DEL(in_cnt) after td;
-					WR_ADD <= INC_ADD(in_cnt) after td;
+					WR_MSB <= INC_MSB(in_cnt);
+					WR_DEL <= INC_DEL(in_cnt);
+					WR_ADD <= INC_ADD(in_cnt);
 				end if;						
 			end if;	
-			sw_inc <= sw_cnt(sw_cnt'left) after td;
+			sw_inc <= sw_cnt(sw_cnt'left);
 		end if;
 	end if;
 end process;
 
-WR_INZ <= WR_ADD after td when rising_edge(clk);
+WR_INZ <= WR_ADD when rising_edge(clk);
 
 ---------------- Write Counters ---------------- 
 pr_wr: process(clk) is
 begin
 	if rising_edge(clk) then
-		dt_ena <= dt_en01 after td;
+		dt_ena <= dt_en01;
 		
 		if (rst = '1') then
-			ram0_wr0 <= '0' after td;
-			ram0_wr1 <= '0' after td;
-			ram1_wr0 <= '0' after td;
-			ram1_wr1 <= '0' after td;
+			ram0_wr0 <= '0';
+			ram0_wr1 <= '0';
+			ram1_wr0 <= '0';
+			ram1_wr1 <= '0';
 			
-			cnt_wr0 <= (others => '0') after td;
-			cnt_wr1 <= WR_DEL after td;
+			cnt_wr0 <= (others => '0');
+			cnt_wr1 <= WR_DEL;
 
-			cnt_ptr <= (0 => '1', others => '0') after td;
-			cnt_ena	<= '0' after td;
+			cnt_ptr <= (0 => '1', others => '0');
+			cnt_ena	<= '0';
 		else
 			---- Write enable ----
 			if (dt_en01 = '1') then
 				if (cnt_ptr(WR_MSB) = '1') then
-					cnt_ptr <= (0 => '1', others => '0') after td;
-					cnt_ena <= '1' after td;
+					cnt_ptr <= (0 => '1', others => '0');
+					cnt_ena <= '1';
 				else
-					cnt_ptr <= cnt_ptr + '1' after td;
-					cnt_ena <= '0' after td;
+					cnt_ptr <= cnt_ptr + '1';
+					cnt_ena <= '0';
 				end if;
 			end if;	
 			
 			---- Find adress counter ----
 			if (dt_ena = '1') then		
 				if (sw_inc = '1') then
-					cnt_wr0 <= (others => '0') after td;
-					cnt_wr1 <= WR_DEL after td;
+					cnt_wr0 <= (others => '0');
+					cnt_wr1 <= WR_DEL;
 				else
 					---- Write Counter ----
 					if (cnt_ena = '1' and ram0_wr1 = '0') then
-						cnt_wr0 <= cnt_wr0 + WR_INZ + 1 after td;
-						cnt_wr1 <= cnt_wr1 + WR_INZ + 1 after td;
+						cnt_wr0 <= cnt_wr0 + WR_INZ + 1;
+						cnt_wr1 <= cnt_wr1 + WR_INZ + 1;
 					else
-						cnt_wr0 <= cnt_wr0 + WR_INZ after td;
-						cnt_wr1 <= cnt_wr1 + WR_INZ after td;
+						cnt_wr0 <= cnt_wr0 + WR_INZ;
+						cnt_wr1 <= cnt_wr1 + WR_INZ;
 					end if;
 				end if;	
 			end if;			
 			
 			---- Find increment mux ----
 			-- if (dt_en01 = '1') then
-			ram0_wr0 <= dt_en01 and not sw_adr(WR_MSB) after td;
-			ram0_wr1 <= dt_en01 and (not (WR_ADD(0) or sw_adr(WR_MSB))) after td;
-			ram1_wr0 <= dt_en01 and (WR_ADD(0) or sw_adr(WR_MSB)) after td;
-			ram1_wr1 <= dt_en01 and (not WR_ADD(0) and sw_adr(WR_MSB)) after td;
+			ram0_wr0 <= dt_en01 and not sw_adr(WR_MSB);
+			ram0_wr1 <= dt_en01 and (not (WR_ADD(0) or sw_adr(WR_MSB)));
+			ram1_wr0 <= dt_en01 and (WR_ADD(0) or sw_adr(WR_MSB));
+			ram1_wr1 <= dt_en01 and (not WR_ADD(0) and sw_adr(WR_MSB));
 			-- end if;
 		end if;
 	end if;
@@ -332,31 +334,31 @@ pr_din: process(clk) is
 begin
 	if rising_edge(clk) then
 		---- Input data delays ----
-		ram_dia <= dt_int0 after td;
-		ram_dib <= dt_int1 after td;
+		ram_dia <= dt_int0;
+		ram_dib <= dt_int1;
 		---- Mux input data ----
 		if (ram0_wr0 = '1') then
-			ram0_dia <= ram_dia after td;
-            ram0_dib <= ram_dib after td;
+			ram0_dia <= ram_dia;
+            ram0_dib <= ram_dib;
 		end if;
 		if (ram1_wr0 = '1') then
-			ram1_dia <= ram_dia after td;
-            ram1_dib <= ram_dib after td;
+			ram1_dia <= ram_dia;
+            ram1_dib <= ram_dib;
 		end if;
 		---- Write enable to RAMBs ----
-		ram0_we0 <= ram0_wr0 after td;
-		ram0_we1 <= ram0_wr1 after td;
-		ram1_we0 <= ram1_wr1 after td;
-		ram1_we1 <= ram1_wr0 after td;
+		ram0_we0 <= ram0_wr0;
+		ram0_we1 <= ram0_wr1;
+		ram1_we0 <= ram1_wr1;
+		ram1_we1 <= ram1_wr0;
 		
-		ram0_re0 <= ram0_we0 and wr_1zz after td;
-		ram0_re1 <= ram0_we1 and wr_1zz after td;
-		ram1_re0 <= ram1_we0 and wr_1zz after td;
-		ram1_re1 <= ram1_we1 and wr_1zz after td;
+		ram0_re0 <= ram0_we0 and wr_1zz;
+		ram0_re1 <= ram0_we1 and wr_1zz;
+		ram1_re0 <= ram1_we0 and wr_1zz;
+		ram1_re1 <= ram1_we1 and wr_1zz;
 
 		---- Address R/W RAMBs ----
-		adr_wr0 <= cnt_wr0 after td;
-		adr_wr1 <= cnt_wr1 after td;
+		adr_wr0 <= cnt_wr0;
+		adr_wr1 <= cnt_wr1;
 	end if;
 end process;
 
@@ -366,22 +368,22 @@ begin
 	if rising_edge(clk) then
 		---- Mux output data 0 ----
 		if (ram0_re0 = '1') then
-			dt_rev0 <= ram0_doa after td;
+			dt_rev0 <= ram0_doa;
 		elsif (ram1_re0 = '1') then
-			dt_rev0 <= ram1_doa after td;
+			dt_rev0 <= ram1_doa;
 		end if;
 		---- Mux output data 1 ----
 		if (ram0_re1 = '1') then
-			dt_rev1 <= ram0_dob after td;
+			dt_rev1 <= ram0_dob;
 		elsif (ram1_re1 = '1') then
-			dt_rev1 <= ram1_dob after td;
+			dt_rev1 <= ram1_dob;
 		end if;
 		---- Mux output valid 01 ----
-		dt_vl01 <= (ram0_re0 or ram1_re0) and (ram0_re1 or ram1_re1) after td;
+		dt_vl01 <= (ram0_re0 or ram1_re0) and (ram0_re1 or ram1_re1);
 	end if;
 end process;
 
------------- RAM 0/1 Components ------------
+------------ RAM 0 Component ------------
 xTDP_RAM0: entity work.ramb_tdp_rw
 	generic map (
 	    DATA    => DATA,

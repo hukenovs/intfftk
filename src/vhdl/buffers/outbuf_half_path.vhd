@@ -68,14 +68,13 @@ use ieee.std_logic_unsigned.all;
 
 entity outbuf_half_path is
 	generic (
-		TD			: time:=0.1ns;  --! Simulation time		
 		ADDR		: integer:=10;   --! FFT ADDR
-		DATA		: integer:=32   --! Data width		
+		DATA		: integer:=32   --! Data width
 	);
 	port(
 		---- Common signals ----
 		clk  		: in  std_logic; --! Clock
-		reset 		: in  std_logic; --! Reset			
+		reset 		: in  std_logic; --! Reset
 		
 		---- Input data ----
 		do_dt		: out std_logic_vector(DATA-1 downto 0); --! Data In
@@ -83,14 +82,14 @@ entity outbuf_half_path is
 		---- Output data ----
 		da_dt		: in  std_logic_vector(DATA-1 downto 0); --! Even Data
 		db_dt		: in  std_logic_vector(DATA-1 downto 0); --! Odd Data
-		ab_vl		: in  std_logic --! Data valid		
+		ab_vl		: in  std_logic --! Data valid
 	);	
 end outbuf_half_path;
 
 architecture outbuf_half_path of outbuf_half_path is
 
-signal cnt					: std_logic_vector(ADDR-1 downto 0);	  
-signal addr_wr				: std_logic_vector(ADDR-2 downto 0);	  
+signal cnt					: std_logic_vector(ADDR-1 downto 0);
+signal addr_wr				: std_logic_vector(ADDR-2 downto 0);
 
 signal cnt_rd				: std_logic_vector(ADDR-1 downto 0);
 signal ena_rd				: std_logic;
@@ -114,70 +113,67 @@ pr_cnt: process(clk) is
 begin
 	if rising_edge(clk) then
 		if (reset = '1') then
-			cnt			<= (0 => '1', others => '0') after td;
-			addr_wr		<= (others => '0') after td;
-			cnt_rd 		<= (0 => '1', others => '0') after td;
-			ena_rd 		<= '0' after td;
+			cnt			<= (0 => '1', others => '0');
+			addr_wr		<= (others => '0');
+			cnt_rd 		<= (0 => '1', others => '0');
+			ena_rd 		<= '0';
 
-			ram_rdad	<= (others => '0') after td;
+			ram_rdad	<= (others => '0');
 		else
 
 			if (ab_vl = '1') then
 				if (cnt(cnt'left) = '1') then
-					cnt <= (0 => '1', others => '0') after td;
+					cnt <= (0 => '1', others => '0');
 				else				
-					cnt <= cnt + '1' after td;
+					cnt <= cnt + '1';
 				end if;
 			end if;	
 			
 			if (ab_vl = '1') then
-				addr_wr <= addr_wr + '1' after td;
+				addr_wr <= addr_wr + '1';
 			end if;				
 
 			if (ena_rd = '1') then
 				if (cnt_rd(cnt_rd'left) = '1') then
-					cnt_rd   <= (0 => '1', others => '0') after td;	
-					ram_rdad <= (others => '0') after td;	
+					cnt_rd   <= (0 => '1', others => '0');	
+					ram_rdad <= (others => '0');	
 				else				
-					cnt_rd   <= cnt_rd + '1' after td;
-					ram_rdad <= ram_rdad + '1' after td;
+					cnt_rd   <= cnt_rd + '1';
+					ram_rdad <= ram_rdad + '1';
 				end if;
 			else
-				-- cnt_rd <= (0 => '1', others => '0') after td;	
+				-- cnt_rd <= (0 => '1', others => '0');	
 			end if;
 			
 			if (cnt(cnt'left) = '1') then
 				if (ab_vl = '1') then
-					ena_rd <= '1' after td;
+					ena_rd <= '1';
 				end if;			
 			elsif (cnt_rd(cnt_rd'left) = '1') then
-				ena_rd <= '0' after td;
+				ena_rd <= '0';
 			end if;
 			
 		end if;
 	end if;
 end process;	
 
-ena_rdz <= ena_rd after td when rising_edge(clk);
-da_dtz1 <= da_dt  after td when rising_edge(clk);
+ena_rdz <= ena_rd when rising_edge(clk);
+da_dtz1 <= da_dt  when rising_edge(clk);
 
 pr_data: process(clk) is
 begin
 	if rising_edge(clk) then
 		if (ram_wea = '1') then
-			do_dt <= da_dtz1 after td;
-			do_en <= ram_wea after td;
+			do_dt <= da_dtz1;
+			do_en <= ram_wea;
 		else
-			do_dt <= ram_doa after td;
-			do_en <= ena_rdz after td;		
+			do_dt <= ram_doa;
+			do_en <= ena_rdz;		
 		end if;
 	end if;
 end process;
 
-
--- ram_wrad <= addr_wr after td when rising_edge(clk);
--- ram_dia <= db_dt after td when rising_edge(clk);
-ram_wea <= ab_vl after td when rising_edge(clk);
+ram_wea <= ab_vl when rising_edge(clk);
 
 ---- Port A write ----
 pr_ram0: process(clk)

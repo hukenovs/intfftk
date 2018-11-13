@@ -3,17 +3,17 @@
 -- Title       : iobuf_flow_int2
 -- Design      : fpfftk
 -- Author      : Kapitanov
--- Company     :
+-- Company     : 
+-- E-mail      : sallador@bk.ru
 --
 -------------------------------------------------------------------------------
 --
--- Description : version 1.0
+-- Description : Convert data from interleave-2 mode to delay-path [N/2].
+--               Common clock. Data enable strobe can't be wrapped. 
 --
 -------------------------------------------------------------------------------
 --
 --	Version 1.0  12.02.2016
---        Description: Convert data from interleave-2 mode to bit-reverse.
---                        Common clock. Data enable strobe can't be wrapped. 
 --                        
 --        Example 1 (Mode BITREV = FALSE): Interleave-2 to Half-part data.		
 --
@@ -34,6 +34,8 @@
 --        Data out: (interleave-2)
 --            DOx: .......0246...
 --            DOx: .......1357...
+--
+--  NB! See the difference between 'iobuf_flow_int2' & 'iobuf_wrap_int2' components!
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -70,11 +72,10 @@ use ieee.std_logic_unsigned.all;
 
 entity iobuf_flow_int2 is
 	generic (
-		TD			: time:=0.1ns;   --! Simulation time
 		BITREV		: boolean:=FALSE;--! Bit-reverse mode (FALSE - int2-to-half, TRUE - half-to-int2)
 		DATA		: integer:= 32;  --! Data Width
 	    ADDR		: integer:= 10   --! Address depth
-		);
+	);
 	port (
 	    rst			: in  std_logic;
 		clk			: in  std_logic;	    
@@ -215,73 +216,73 @@ pr_del: process(clk) is
 begin
 	if rising_edge(clk) then
 		if (rst = '1') then
-			sw_cnt <= (0 => '1', others => '0') after td;
+			sw_cnt <= (0 => '1', others => '0');
 			
-			in_cnt <= 1 after td;
-			WR_INC <= STD_INC(0) after td;
-			WR_DEL <= STD_DEL(0) after td;
-			WR_RNG <= INC_BIT(0) after td;
+			in_cnt <= 1;
+			WR_INC <= STD_INC(0);
+			WR_DEL <= STD_DEL(0);
+			WR_RNG <= INC_BIT(0);
 		else
 			if (dt_en01 = '1') then				
 				---- Counter for WR0 / WR1 ----
 				if (sw_cnt(sw_cnt'left) = '1') then
-					sw_cnt <= (0 => '1', others => '0') after td;
+					sw_cnt <= (0 => '1', others => '0');
 				else
-					sw_cnt <= sw_cnt + '1' after td;
+					sw_cnt <= sw_cnt + '1';
 				end if;					
 				
 				---- Counter for Arrays ----
 				if (sw_cnt(sw_cnt'left) = '1') then	
 					if (in_cnt = (ADDR-1)) then
-						in_cnt <= 0 after td;
+						in_cnt <= 0;
 					else
-						in_cnt <= in_cnt + 1 after td;
+						in_cnt <= in_cnt + 1;
 					end if;
-					WR_INC <= STD_INC(in_cnt) after td;
-					WR_DEL <= STD_DEL(in_cnt) after td;
-					WR_RNG <= INC_BIT(in_cnt) after td;
+					WR_INC <= STD_INC(in_cnt);
+					WR_DEL <= STD_DEL(in_cnt);
+					WR_RNG <= INC_BIT(in_cnt);
 				end if;						
 			end if;	
-			sw_inc <= sw_cnt(sw_cnt'left) after td;
+			sw_inc <= sw_cnt(sw_cnt'left);
 		end if;
 	end if;
 end process;
 
-WR_INZ <= WR_INC after td when rising_edge(clk);
+WR_INZ <= WR_INC when rising_edge(clk);
 
 ---------------- Write Counters ---------------- 
 pr_wr: process(clk) is
 begin
 	if rising_edge(clk) then
 		if (rst = '1') then
-			cnt_even <= (others => '0') after td;
-			cnt_odd  <= WR_DEL after td;
-			sw_ptr   <= (0 => '1', others => '0') after td;
-			sw_ena	 <= '0' after td;
+			cnt_even <= (others => '0');
+			cnt_odd  <= WR_DEL;
+			sw_ptr   <= (0 => '1', others => '0');
+			sw_ena	 <= '0';
 		else
 			---- Find increment mux ----
 			if (dt_en01 = '1') then
 				if (sw_ptr(WR_RNG) = '1') then
-					sw_ptr <= (0 => '1', others => '0') after td;
-					sw_ena <= '1' after td;
+					sw_ptr <= (0 => '1', others => '0');
+					sw_ena <= '1';
 				else
-					sw_ptr <= sw_ptr + '1' after td;
-					sw_ena <= '0' after td;
+					sw_ptr <= sw_ptr + '1';
+					sw_ena <= '0';
 				end if;
 			end if;
 			---- Find address counter ----
 			if (dt_ena = '1') then		
 				if (sw_inc = '1') then
-					cnt_even <= (others => '0') after td;
-					cnt_odd  <= WR_DEL after td;
+					cnt_even <= (others => '0');
+					cnt_odd  <= WR_DEL;
 				else
 					---- Write Counter ----
 					if (sw_ena = '1') then
-						cnt_even <= cnt_even + WR_INZ + 1 after td;
-						cnt_odd  <= cnt_odd  + WR_INZ + 1 after td;
+						cnt_even <= cnt_even + WR_INZ + 1;
+						cnt_odd  <= cnt_odd  + WR_INZ + 1;
 					else
-						cnt_even <= cnt_even + WR_INZ after td;
-						cnt_odd  <= cnt_odd  + WR_INZ after td;
+						cnt_even <= cnt_even + WR_INZ;
+						cnt_odd  <= cnt_odd  + WR_INZ;
 					end if;	
 				end if;	
 			end if;
@@ -294,43 +295,43 @@ pr_pr1st: process(clk)
 begin
     if (clk'event and clk='1') then
 		if (rst = '1') then
-			rd_1st <= '0' after td;
+			rd_1st <= '0';
 			--sw_str <= (0 => '1', others => '0');
 		else
 
 			---- Find increment mux ----
 			--if (dt_en01 = '1') then
 			--	if (sw_str(WR_RNG) = '0') then
-			--		sw_str <= sw_str + '1' after td;
+			--		sw_str <= sw_str + '1';
 			--	end if;
 			--end if;
 
 			if (sw_ptr(sw_ptr'left) = '1') then
-				rd_1st <= '1' after td;
+				rd_1st <= '1';
 			end if;
 		end if;
 	end if;
 end process;
 
-dt_ena <= dt_en01 after td when rising_edge(clk);
+dt_ena <= dt_en01 when rising_edge(clk);
 
 ---- RAM 0/1 mapping ----
-ram_dia <= dt_int0 after td when rising_edge(clk);
-ram_dib <= dt_int1 after td when rising_edge(clk);
+ram_dia <= dt_int0 when rising_edge(clk);
+ram_dib <= dt_int1 when rising_edge(clk);
 
-ram_adra <= cnt_even; -- after td when rising_edge(clk);
-ram_adrb <= cnt_odd;  -- after td when rising_edge(clk);
+ram_adra <= cnt_even; -- when rising_edge(clk);
+ram_adrb <= cnt_odd;  -- when rising_edge(clk);
 
 ---- RAM WR/RD ----
 pr_rdwr: process(clk)
 begin
     if (clk'event and clk='1') then
 		if (rst = '1') then
-			ram_wr <= '0' after td;
-		    ram_rd <= '0' after td;
+			ram_wr <= '0';
+		    ram_rd <= '0';
 		else
-			ram_wr <= dt_en01 after td;
-			ram_rd <= dt_en01 and rd_1st after td;
+			ram_wr <= dt_en01;
+			ram_rd <= dt_en01 and rd_1st;
 	    end if;	
     end if;
 end process;
@@ -339,12 +340,12 @@ end process;
 pr_out: process(clk)
 begin
     if (clk'event and clk='1') then
-		dt_rev0 <= ram_doa after td;
-		dt_rev1 <= ram_dob after td;
-		dt_vl01 <= ram_rdz  after td;
+		dt_rev0 <= ram_doa;
+		dt_rev1 <= ram_dob;
+		dt_vl01 <= ram_rdz ;
     end if;
 end process;
-ram_rdz <= ram_rd after td when rising_edge(clk);
+ram_rdz <= ram_rd when rising_edge(clk);
 
 
 xTDP_RAM0: entity work.ramb_tdp_one_clk2
