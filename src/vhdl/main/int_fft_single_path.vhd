@@ -26,8 +26,8 @@
 -------------------------------------------------------------------------------
 --
 --	The MIT License (MIT)
---	Copyright (c) 2018 Kapitanov Alexander 													 
---		                                          				 
+--	Copyright (c) 2018 Kapitanov Alexander
+--
 -- Permission is hereby granted, free of charge, to any person obtaining a copy 
 -- of this software and associated documentation files (the "Software"), 
 -- to deal in the Software without restriction, including without limitation 
@@ -46,7 +46,7 @@
 -- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
 -- IN THE SOFTWARE.
--- 	                                                 
+--
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 library ieee;
@@ -55,8 +55,7 @@ use ieee.std_logic_signed.all;
 use ieee.std_logic_arith.all;
 
 entity int_fft_single_path is
-	generic (	
-		TD				: time:=0.1ns;  		--! Simulation time	
+	generic (
 		NFFT			: integer:=13;			--! Number of FFT stages
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
@@ -106,8 +105,8 @@ signal di_ena			: std_logic;
 signal do_val			: std_logic;
 
 ---------------- Shuffle data ----------------
-signal dt_int0			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);    
-signal dt_int1			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);    
+signal dt_int0			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
+signal dt_int1			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
 signal dt_en01			: std_logic;     
 
 signal dt_rev0			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
@@ -127,39 +126,38 @@ signal dr_en			: std_logic;
 	
 begin
 
-rstp <= not reset after td when rising_edge(clk);
-rstn <= reset after td when rising_edge(clk);
+rstp <= not reset when rising_edge(clk);
+rstn <= reset when rising_edge(clk);
 
 di_dt <= di_im & di_re;
+
 -------------------- INPUT BUFFER --------------------
 xIN_BUF: entity work.inbuf_half_path
 	generic map (
-		TD			=> TD,
 		ADDR 		=> NFFT,
 		DATA		=> 2*DATA_WIDTH
 	)	
 	port map (
 		clk  		=> clk,
-		reset 		=> rstp,		
+		reset 		=> rstp,
 	
 		di_dt		=> di_dt,
 		di_en		=> di_en,
 
-		da_dt		=> da_dt,		
-		db_dt		=> db_dt,		
+		da_dt		=> da_dt,
+		db_dt		=> db_dt,
 		ab_vl		=> di_ena
 	);
 
-di_re0 <= da_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);	
-di_im0 <= da_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);	
-di_re1 <= db_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);	
-di_im1 <= db_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);	
+di_re0 <= da_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
+di_im0 <= da_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
+di_re1 <= db_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
+di_im1 <= db_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
 
 ------------------ FFTK_N (FORWARD FFT) --------------------
 xFFT: entity work.int_fftNk
 	generic map (
 		IS_SIM		=> FALSE,
-		TD			=> TD,
 		NFFT		=> NFFT,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -192,7 +190,6 @@ dt_en01 <= do_val;
 
 xSHL_BUF: entity work.iobuf_flow_int2 
 	generic map (
-		TD			=> TD,
 		BITREV		=> FALSE,
 		ADDR 		=> NFFT,
 		DATA		=> 2*(NFFT+DATA_WIDTH)
@@ -213,7 +210,6 @@ xSHL_BUF: entity work.iobuf_flow_int2
 -------------------- OUTPUT BUFFER --------------------	
 xOUT_BUF : entity work.outbuf_half_path
 	generic map (
-		TD			=> TD,
 		ADDR 		=> NFFT,
 		DATA		=> 2*(NFFT+DATA_WIDTH)
 	)
@@ -232,15 +228,15 @@ xOUT_BUF : entity work.outbuf_half_path
 dx_re(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(NFFT+DATA_WIDTH)-1 downto 0*(NFFT+DATA_WIDTH));
 dx_im(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(NFFT+DATA_WIDTH)-1 downto 1*(NFFT+DATA_WIDTH));
 
--------------------- BIT REVERSE ORDER --------------------			
+-------------------- BIT REVERSE ORDER --------------------
 xBITREV_RE : entity work.int_bitrev_ord
 	generic map (
 		STAGES		=> NFFT,
 		NWIDTH		=> NFFT+DATA_WIDTH	
 	)
-	port map (								
+	port map (
 		clk 		=> clk,
-		reset 		=> rstn,		
+		reset 		=> rstn,
 
 		di_dt		=> dx_re,
 		di_en		=> dx_en,
@@ -253,9 +249,9 @@ xBITREV_IM : entity work.int_bitrev_ord
 		STAGES		=> NFFT,
 		NWIDTH		=> NFFT+DATA_WIDTH	
 	)
-	port map (								
+	port map (
 		clk 		=> clk,
-		reset 		=> rstn,		
+		reset 		=> rstn,
 
 		di_dt		=> dx_im,
 		di_en		=> dx_en,
@@ -263,13 +259,13 @@ xBITREV_IM : entity work.int_bitrev_ord
 		do_vl		=> open
 	);	
 	
------------------- xDATA OUTPUT --------------------		
+------------------ xDATA OUTPUT --------------------
 pr_rev: process(clk) is
 begin
 	if (rising_edge(clk)) then
-		do_re <= dr_re after td;
-		do_im <= dr_im after td;
-		do_vl <= dr_en after td;
+		do_re <= dr_re;
+		do_im <= dr_im;
+		do_vl <= dr_en;
 	end if;
 end process;	
 	

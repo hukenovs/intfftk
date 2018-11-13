@@ -53,7 +53,6 @@ use ieee.std_logic_unsigned.all;
 entity int_dif2_fly_sc is
 	generic(
 		IS_SIM		: boolean:=FALSE; --! Simulation model: TRUE / FALSE
-		TD			: time:=0.5ns;    --! Simulation time	
 		STAGE		: integer:=0;  --! Butterfly stages
 		DTW			: integer:=16; --! Data width
 		TFW			: integer:=16; --! Twiddle factor width
@@ -212,9 +211,9 @@ begin
 		begin
 			if rising_edge(clk) then
 				if (rst = '1') then
-					dt_sw <= '0' after td;
+					dt_sw <= '0';
 				elsif (vl_zz(ADD_DELAY-1) = '1') then
-					dt_sw <= not dt_sw after td;
+					dt_sw <= not dt_sw;
 				end if;
 			end if;
 		end process;
@@ -233,20 +232,20 @@ begin
 			if rising_edge(clk) then
 				---- WW(0){Re,Im} = {1, 0} ----
 				if (dt_sw = '0') then
-					sz_re <= su_re after td;
-					sz_im <= su_im after td;
+					sz_re <= su_re;
+					sz_im <= su_im;
 				---- WW(1){Re,Im} = {0, 1} ----
 				else
-					sz_re <= su_im after td;
+					sz_re <= su_im;
 					if (su_re(DTW-1) = '0') then ---- ???
-						sz_im <= not(su_re) + '1' after td;
+						sz_im <= not(su_re) + '1';
 					else
-						sz_im <= not(su_re) after td;
+						sz_im <= not(su_re);
 					end if;
 				end if;
 				---- Delay ----
-				az_re <= ad_re after td;	
-				az_im <= ad_im after td;	
+				az_re <= ad_re;	
+				az_im <= ad_im;	
 			end if;
 		end process;
 		

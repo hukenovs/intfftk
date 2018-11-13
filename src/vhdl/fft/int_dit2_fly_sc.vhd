@@ -53,7 +53,6 @@ use ieee.std_logic_unsigned.all;
 entity int_dit2_fly_sc is
 	generic(
 		IS_SIM		: boolean:=FALSE; --! Simulation model: TRUE / FALSE
-		TD			: time:=0.5ns;    --! Simulation time	
 		STAGE		: integer:=0;  --! Butterfly stages
 		DTW			: integer:=16; --! Data width
 		TFW			: integer:=16; --! Twiddle factor width
@@ -73,7 +72,7 @@ entity int_dit2_fly_sc is
 		OA_IM 		: out std_logic_vector(DTW-1 downto 0); --! Im even output data
 		OB_RE 		: out std_logic_vector(DTW-1 downto 0); --! Re odd  output data
 		OB_IM 		: out std_logic_vector(DTW-1 downto 0); --! Im odd  output data
-		DO_VL		: out std_logic;	--! Output data valid			
+		DO_VL		: out std_logic;	--! Output data valid
 		
 		RST  		: in  std_logic;	--! Global Reset
 		CLK 		: in  std_logic		--! DSP Clock	
@@ -209,9 +208,9 @@ begin
 		begin
 			if rising_edge(clk) then
 				if (rst = '1') then
-					dt_sw <= '0' after td;
+					dt_sw <= '0';
 				elsif (IN_EN = '1') then
-					dt_sw <= not dt_sw after td;
+					dt_sw <= not dt_sw;
 				end if;
 			end if;
 		end process;
@@ -230,21 +229,21 @@ begin
 			if rising_edge(clk) then
 				---- WW(0){Re,Im} = {1, 0} ----
 				if (dt_sw = '0') then
-					bw_re <= IB_RE after td;
-					bw_im <= IB_IM after td;
+					bw_re <= IB_RE;
+					bw_im <= IB_IM;
 				---- WW(1){Re,Im} = {0, -1} ----
 				else
-					-- bw_re <= IB_IM after td;
-					bw_im <= IB_RE after td;
+					-- bw_re <= IB_IM;
+					bw_im <= IB_RE;
 					if (IB_IM(DTW-1) = '0') then
-						bw_re <= not(IB_IM) + '1' after td;
+						bw_re <= not(IB_IM) + '1';
 					else
-						bw_re <= not(IB_IM) after td;
+						bw_re <= not(IB_IM);
 					end if;
 				end if;
 				---- Delay ----
-				az_re <= IA_RE after td;
-				az_im <= IA_IM after td;
+				az_re <= IA_RE;
+				az_im <= IA_IM;
 			end if;
 		end process;
 

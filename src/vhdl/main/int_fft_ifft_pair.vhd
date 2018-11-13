@@ -1,24 +1,31 @@
 -------------------------------------------------------------------------------
 --
 -- Title       : int_fft_ifft_pair
--- Design      : FFT
+-- Design      : FFT (UNSCALED INTEGER)
 -- Author      : Kapitanov Alexander
 -- Company     : 
 -- E-mail      : sallador@bk.ru
 --
--- Description : Main module for FFT/IFFT logic
+-- Description : Main module for FFT/IFFT logic (unscaled)
 --
 -- Has several important constants:
 --
 --		NFFT			- (p) - Number of stages = log2(FFT LENGTH)
 --		DATA_WIDTH		- (p) - Data width for signal imitator: 8-32 bits.
 --		TWDL_WIDTH		- (p) - Data width for twiddle factor : 8-24/26 bits.
+--		RAMB_TYPE		- (p) -	Cross-commutation type: "WRAP" / "CONT"
+--			"WRAP" - data valid strobe can be bursting (no need continuous valid),
+--			"CONT" - data valid must be continuous (strobe length = N/2 points);
+--
 --		FLY_FWD			- (s) - Use butterflies into Forward FFT: 1 - TRUE, 0 - FALSE
 --		FLY_INV			- (s) - Use butterflies into Inverse FFT: 1 - TRUE, 0 - FALSE			
---		XSERIES			- (p) -	FPGA Series: ULTRASCALE / 7SERIES
+--		XSERIES			- (p) -	FPGA Series: 
+--			"NEW" - ULTRASCALE,
+--			"OLD" - 6/7-SERIES;
+--
 --		USE_MLT			- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
 --
--- where: (p) - generic parameter, (s) - signal.
+-- where: (p) - generic parameter, (s) -  input signal.
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -59,6 +66,7 @@ entity int_fft_ifft_pair is
 	generic (	
 		TD				: time:=0.1ns;  		--! Simulation time	
 		NFFT			: integer:=16;			--! Number of FFT stages
+		RAMB_TYPE		: string:="WRAP";		--! Cross-commutation type: WRAP / CONT
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
 		XSERIES			: string:="NEW";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
@@ -143,25 +151,47 @@ di_d0 <= D0_IM & D0_RE;
 di_d1 <= D1_IM & D1_RE;
 
 -------------------- INPUT BUFFER --------------------
-xIN_BUF: entity work.iobuf_flow_int2
-	generic map (
-		TD			=> TD,
-		BITREV		=> FALSE,
-		ADDR 		=> NFFT,
-		DATA		=> 2*DATA_WIDTH
-	)	
-	port map (
-		clk  		=> clk,
-		rst			=> rstp,		
-	
-		dt_int0		=> di_d0,
-		dt_int1		=> di_d1,
-		dt_en01		=> di_en,
+xCONT_IN: if (RAMB_TYPE = "CONT") generate
+	xIN_BUF: entity work.iobuf_flow_int2
+		generic map (
+			BITREV		=> FALSE,
+			ADDR 		=> NFFT,
+			DATA		=> 2*DATA_WIDTH
+		)	
+		port map (
+			clk  		=> clk,
+			rst			=> rstp,
+		
+			dt_int0		=> di_d0,
+			dt_int1		=> di_d1,
+			dt_en01		=> di_en,
 
-		dt_rev0		=> da_dt,		
-		dt_rev1		=> db_dt,		
-		dt_vl01		=> di_ena
-	);
+			dt_rev0		=> da_dt,
+			dt_rev1		=> db_dt,
+			dt_vl01		=> di_ena
+		);
+end generate;
+
+xWRAP_IN: if (RAMB_TYPE = "WRAP") generate
+	xIN_BUF: entity work.iobuf_wrap_int2
+		generic map (
+			BITREV		=> FALSE,
+			ADDR 		=> NFFT,
+			DATA		=> 2*DATA_WIDTH
+		)	
+		port map (
+			clk  		=> clk,
+			rst			=> rstp,
+		
+			dt_int0		=> di_d0,
+			dt_int1		=> di_d1,
+			dt_en01		=> di_en,
+
+			dt_rev0		=> da_dt,
+			dt_rev1		=> db_dt,
+			dt_vl01		=> di_ena
+		);
+end generate;
 
 di_re0 <= da_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);	
 di_im0 <= da_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);	
@@ -172,7 +202,6 @@ di_im1 <= db_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
 xFFT: entity work.int_fftNk
 	generic map (
 		IS_SIM		=> FALSE,
-		TD			=> TD,
 		NFFT		=> NFFT,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -208,7 +237,6 @@ fi_ena <= do_val when rising_edge(clk);
 xIFFT: entity work.int_ifftNk
 	generic map (
 		IS_SIM		=> FALSE,
-		TD			=> TD,
 		NFFT		=> NFFT,
 		DATA_WIDTH	=> DATA_WIDTH+NFFT,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -239,35 +267,54 @@ dt_int0 <= fo_im0 & fo_re0;
 dt_int1 <= fo_im1 & fo_re1;
 dt_en01 <= fo_val;
 
-xSHL_BUF: entity work.iobuf_flow_int2 
-	generic map (
-		TD			=> TD,
-		BITREV		=> TRUE,
-		ADDR 		=> NFFT,
-		DATA		=> 2*(2*NFFT+DATA_WIDTH)
-	)
-	port map (
-		clk 		=> clk,
-		rst 		=> rstp,    
+xCONT_OUT: if (RAMB_TYPE = "CONT") generate
+	xSHL_OUT: entity work.iobuf_flow_int2 
+		generic map (
+			BITREV		=> TRUE,
+			ADDR 		=> NFFT,
+			DATA		=> 2*(2*NFFT+DATA_WIDTH)
+		)
+		port map (
+			clk 		=> clk,
+			rst 		=> rstp,    
 
-	    dt_int0		=> dt_int0, 
-	    dt_int1		=> dt_int1, 
-	    dt_en01		=> dt_en01,
+			dt_int0		=> dt_int0, 
+			dt_int1		=> dt_int1, 
+			dt_en01		=> dt_en01,
+			
+			dt_rev0		=> open,
+			dt_rev1		=> open,
+			dt_vl01		=> open
+		);
+end generate;
+
+xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
+	xSHL_OUT: entity work.iobuf_wrap_int2
+		generic map (
+			BITREV		=> FALSE,
+			ADDR 		=> NFFT,
+			DATA		=> 2*DATA_WIDTH
+		)	
+		port map (
+			clk  		=> clk,
+			rst			=> rstp,
 		
-	    dt_rev0		=> open,
-	    dt_rev1		=> open,
-		dt_vl01		=> open
-	);
+			dt_int0		=> di_d0,
+			dt_int1		=> di_d1,
+			dt_en01		=> di_en,
 
+			dt_rev0		=> da_dt,
+			dt_rev1		=> db_dt,
+			dt_vl01		=> di_ena
+		);
+end generate;
 
---------------------------------------------------------------------------------
+-------------------------------------------------------
 -------------------- FOT TESTS ONLY -------------------
---------------------------------------------------------------------------------
+-------------------------------------------------------
 
--------------------- OUTPUT BUFFER --------------------	
 xOUT_BUF : entity work.outbuf_half_path
 	generic map (
-		TD			=> TD,
 		ADDR 		=> NFFT,
 		DATA		=> 2*(2*NFFT+DATA_WIDTH)
 	)
@@ -275,9 +322,9 @@ xOUT_BUF : entity work.outbuf_half_path
 		clk 		=> clk,
 		reset 		=> rstp,		
 
-		da_dt		=> dt_int0, --dt_rev0,
-		db_dt		=> dt_int1, --dt_rev1,
-		ab_vl		=> dt_en01, --dt_vl01,
+		da_dt		=> dt_int0,
+		db_dt		=> dt_int1,
+		ab_vl		=> dt_en01,
 
 		do_dt		=> qx_dt,
 		do_en		=> dx_en	

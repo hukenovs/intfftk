@@ -26,8 +26,8 @@
 -------------------------------------------------------------------------------
 --
 --	The MIT License (MIT)
---	Copyright (c) 2018 Kapitanov Alexander 													 
---		                                          				 
+--	Copyright (c) 2018 Kapitanov Alexander
+--
 -- Permission is hereby granted, free of charge, to any person obtaining a copy 
 -- of this software and associated documentation files (the "Software"), 
 -- to deal in the Software without restriction, including without limitation 
@@ -46,7 +46,7 @@
 -- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS 
 -- IN THE SOFTWARE.
--- 	                                                 
+--
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 library ieee;
@@ -55,15 +55,14 @@ use ieee.std_logic_signed.all;
 use ieee.std_logic_arith.all;
 
 entity int_fft_single_scaled is
-	generic (	
-		TD				: time:=0.1ns;  		--! Simulation time	
+	generic (
 		NFFT			: integer:=13;			--! Number of FFT stages
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
 		XSERIES			: string:="NEW";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
 		USE_MLT			: boolean:=FALSE 		--! Use Multiplier for calculation M_PI in Twiddle factor
-	);														  
-	port (													  
+	);
+	port (
 		---- Common ----
 		RESET			: in  std_logic;	--! Global reset
 		CLK				: in  std_logic;	--! DSP clock
@@ -127,26 +126,26 @@ signal dr_en			: std_logic;
 	
 begin
 
-rstp <= not reset after td when rising_edge(clk);
-rstn <= reset after td when rising_edge(clk);
+rstp <= not reset when rising_edge(clk);
+rstn <= reset when rising_edge(clk);
 
 di_dt <= di_im & di_re;
+
 -------------------- INPUT BUFFER --------------------
 xIN_BUF: entity work.inbuf_half_path
 	generic map (
-		TD			=> TD,
 		ADDR 		=> NFFT,
 		DATA		=> 2*DATA_WIDTH
 	)	
 	port map (
 		clk  		=> clk,
-		reset 		=> rstp,		
+		reset 		=> rstp,
 	
 		di_dt		=> di_dt,
 		di_en		=> di_en,
 
-		da_dt		=> da_dt,		
-		db_dt		=> db_dt,		
+		da_dt		=> da_dt,
+		db_dt		=> db_dt,
 		ab_vl		=> di_ena
 	);
 
@@ -159,7 +158,6 @@ di_im1 <= db_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
 xFFT: entity work.int_fftNk_sc
 	generic map (
 		IS_SIM		=> FALSE,
-		TD			=> TD,
 		NFFT		=> NFFT,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -192,7 +190,6 @@ dt_en01 <= do_val;
 
 xSHL_BUF: entity work.iobuf_flow_int2 
 	generic map (
-		TD			=> TD,
 		BITREV		=> FALSE,
 		ADDR 		=> NFFT,
 		DATA		=> 2*DATA_WIDTH
@@ -213,7 +210,6 @@ xSHL_BUF: entity work.iobuf_flow_int2
 -------------------- OUTPUT BUFFER --------------------	
 xOUT_BUF : entity work.outbuf_half_path
 	generic map (
-		TD			=> TD,
 		ADDR 		=> NFFT,
 		DATA		=> 2*DATA_WIDTH
 	)
@@ -267,9 +263,9 @@ xBITREV_IM : entity work.int_bitrev_ord
 pr_rev: process(clk) is
 begin
 	if (rising_edge(clk)) then
-		do_re <= dr_re after td;
-		do_im <= dr_im after td;
-		do_vl <= dr_en after td;
+		do_re <= dr_re;
+		do_im <= dr_im;
+		do_vl <= dr_en;
 	end if;
 end process;	
 	
