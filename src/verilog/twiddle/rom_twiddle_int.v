@@ -106,32 +106,73 @@ module rom_twiddle_int
 
   // functions declaration //
   function find_depth;
-  input avar;
+    input avar;
   begin
     if ((avar > 0) & (avar < 11)) find_depth = (avar-1);  
     else find_depth = 9;
   end
   endfunction
   
-  localparam DEPTH = find_depth(NFFT); 
-  
-  
+  localparam DEPTH = find_depth(NFFT);
   localparam MATH_PI = 3.14159265359;
-  reg [2*AWD-1 : 0] arr_re [0 : 2**DEPTH-1];
-  reg [2*AWD-1 : 0] arr_im [0 : 2**DEPTH-1];
-  
-//  reg  mg_std;  
-//  integer i;
-//  initial begin
-//    for (i = 0; i < 2**DEPTH; i = i +1) begin
-//    mg_std = ((2.0 ** (AWD-1)) - 1.0) ? AWD < 18 : (2.0 ** (AWD-2)) - 1.0;
-//    arr_re[i] <= mg_std * COS((i * MATH_PI)/(2**(DEPTH+1)));
-//    arr_im[i] <= mg_std * SIN(-(i * MATH_PI)/(2**(DEPTH+1)));
-//    end
-//  end 
+
+  // Factorial function: y = x! if x = 0 or 1 then y = 1 else y = factorial(x)
+  function real fn_fact;
+    input real x;
+    integer i;
+    real ret;
+  begin
+    ret = 1.0;
+    if (x > 1) begin
+      for (i = 2; i < x; i = i + 1) begin
+        x = x * i;
+      end
+    end
+    fn_fact = ret;
+  end
+  endfunction
+
+  // Calculate sin(x) via Taylor series (8-order)
+  function real find_sin;
+    input real x;
+  begin
+    find_sin = x - x**3/fn_fact(3) + x**5/fn_fact(5) - x**7/fn_fact(7) + x**9/fn_fact(9) - x**11/fn_fact(11) + x**13/fn_fact(13) - x**15/fn_fact(15);
+  end
+  endfunction
+
+  // Calculate cos(x) via Taylor series (8-order)
+  function real find_cos;
+  input real x;
+  begin
+    find_cos = 1 - x**2/fn_fact(2) + x**4/fn_fact(4) - x**6/fn_fact(6) + x**8/fn_fact(8) - x**10/fn_fact(10) + x**12/fn_fact(12) - x**14/fn_fact(14);
+  end
+  endfunction
+
+  // Create ROM data
+  reg [2*AWD-1 : 0] arr_data [0 : 2**DEPTH-1];
+
+  function [2*AWD-1 : 0] [0 : 2**DEPTH-1] rom_twiddle;
+    input Amp, Len;
+
+    real phase, magn;
+    reg [AWD-1 : 0] sig_re, sig_im;
+    integer i;
+  begin
+    magn = (Amp < 18) ? (2.0 ** (Amp-1)) - 1.0 : (2.0 ** (Amp-2)) - 1.0; 
+
+    for (i = 0; i < 2**Len; i = i + 1) begin
+      phase = (i * MATH_PI) / (2.0 ** (Len+1));
+
+      sig_re = $rtoi(magn * find_cos(phase)); // $rtoi(real_number);
+      sig_im = $rtoi(magn * find_sin(phase));
+
+      rom_twiddle[i] = {sig_im, sig_re};
+    end
+  end
+  endfunction
 
 
-  reg [STAGE-1:0]		cnt;
+  reg [STAGE-1:0] cnt;
   wire div;
   
   always @(posedge clk) begin
