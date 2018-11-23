@@ -132,19 +132,19 @@ module rom_twiddle_int
   end
   endfunction
 
-  // Calculate sin(x) via Taylor series (8-order)
+  // Calculate sin(x) via Taylor series (10-order)
   function real find_sin;
     input real x;
   begin
-    find_sin = x - x**3/fn_fact(3) + x**5/fn_fact(5) - x**7/fn_fact(7) + x**9/fn_fact(9) - x**11/fn_fact(11) + x**13/fn_fact(13) - x**15/fn_fact(15);
+    find_sin = x - x**3/fn_fact(3) + x**5/fn_fact(5) - x**7/fn_fact(7) + x**9/fn_fact(9) - x**11/fn_fact(11) + x**13/fn_fact(13) - x**15/fn_fact(15) + x**17/fn_fact(17) - x**19/fn_fact(19);
   end
   endfunction
 
-  // Calculate cos(x) via Taylor series (8-order)
+  // Calculate cos(x) via Taylor series (10-order)
   function real find_cos;
   input real x;
   begin
-    find_cos = 1 - x**2/fn_fact(2) + x**4/fn_fact(4) - x**6/fn_fact(6) + x**8/fn_fact(8) - x**10/fn_fact(10) + x**12/fn_fact(12) - x**14/fn_fact(14);
+    find_cos = 1 - x**2/fn_fact(2) + x**4/fn_fact(4) - x**6/fn_fact(6) + x**8/fn_fact(8) - x**10/fn_fact(10) + x**12/fn_fact(12) - x**14/fn_fact(14) + x**16/fn_fact(16) - x**18/fn_fact(18);
   end
   endfunction
 
