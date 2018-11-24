@@ -53,7 +53,7 @@
 
 module mlt59x18_dsp48e1
     (
-        input   RST,CLK,
+        input   RST, CLK,
         input  [58:0] MLT_A,
         input  [17:0] MLT_B,
         output reg [76:0] MLT_P
@@ -82,11 +82,11 @@ module mlt59x18_dsp48e1
     end
 
     always @(posedge CLK) begin  
-        dspP_MZ[16 : 00] <= dspP_M3[16 : 00];    
+        dspP_MZ[16 : 00] <= dspP_M3[16 : 00];
         dspB_ZZ <= dspB_12;
 
         dspA_M1[24 : 00] <= MLT_A[58 : 34];
-        dspA_M1[29 : 25] <= {5{MLT_A[58]}};        
+        dspA_M1[29 : 25] <= {5{MLT_A[58]}};
     end
 
     assign dspB_12 = MLT_B;

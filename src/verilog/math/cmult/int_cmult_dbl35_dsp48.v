@@ -80,8 +80,8 @@ module int_cmult_dbl35_dsp48
     (
         input CLK,RST,
         
-        input [MAW-1 : 0] M1_AA,M2_AA,
-        input [MBW-1 : 0] M1_BB,M2_BB,
+        input [MAW-1 : 0] M1_AA, M2_AA,
+        input [MBW-1 : 0] M1_BB, M2_BB,
         output signed [MAW-1 : 0] MP_12
     );
 
@@ -90,22 +90,22 @@ module int_cmult_dbl35_dsp48
     localparam integer PWD = (XSER == "NEW") ? 62 : 60;
 
     // ---- DSP48 signal declaration ----
-    wire [34 : 0] dspA_M1,dspA_M2;
-    wire [BWD-1 : 0] dspB_M1,dspB_M2;
+    wire [34 : 0] dspA_M1, dspA_M2;
+    wire [BWD-1 : 0] dspB_M1, dspB_M2;
 
-    wire [PWD-1 : 0] dspP_M1,dspP_M2;
+    wire [PWD-1 : 0] dspP_M1, dspP_M2;
 
     wire [47 : 0] dsp1_48,dsp2_48;
 
     wire [29 : 0] dspA_12;
     wire [17 : 0] dspB_12;
-    wire [47 : 0] dspC_12,dspP_12;
+    wire [47 : 0] dspC_12, dspP_12;
     
     // ---- Wrap input data ----
-    assign dspB_M1 = { {(BWD-MBW){M1_BB[MBW-1]}},M1_BB[MBW-1 : 0] };
-    assign dspB_M2 = { {(BWD-MBW){M2_BB[MBW-1]}},M2_BB[MBW-1 : 0] };
-    assign dspA_M1 = { {(35-MAW){M1_AA[MAW-1]}},M1_AA[MAW-1 : 0] };
-    assign dspA_M2 = { {(35-MAW){M2_AA[MAW-1]}},M2_AA[MAW-1 : 0] };
+    assign dspB_M1 = { {(BWD-MBW){M1_BB[MBW-1]}}, M1_BB[MBW-1 : 0] };
+    assign dspB_M2 = { {(BWD-MBW){M2_BB[MBW-1]}}, M2_BB[MBW-1 : 0] };
+    assign dspA_M1 = { {(35-MAW){M1_AA[MAW-1]}}, M1_AA[MAW-1 : 0] };
+    assign dspA_M2 = { {(35-MAW){M2_AA[MAW-1]}}, M2_AA[MAW-1 : 0] };
 
     // ---- Min value MBW = 19! ----
     assign dsp1_48 = dspP_M1[PWD-1-(BWD-MBW)-1 : PWD-48-(BWD-MBW)-1];

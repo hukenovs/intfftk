@@ -66,26 +66,26 @@
 // -----------------------------------------------------------------------------
 // 
 // 	GNU GENERAL PUBLIC LICENSE
-//   Version 3, 29 June 2007
+//   Version 3,29 June 2007
 // 
 // 	Copyright (c) 2018 Kapitanov Alexander
 // 
 //   This program is free software: you can redistribute it and/or modify
 //   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
+//   the Free Software Foundation,either version 3 of the License,or
 //   (at your option) any later version.
 // 
 //   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//   along with this program.  If not,see <http://www.gnu.org/licenses/>.
 // 
-//   THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
+//   THERE IS NO WARRANTY FOR THE PROGRAM,TO THE EXTENT PERMITTED BY
 //   APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT 
 //   HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY 
-//   OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, 
+//   OF ANY KIND,EITHER EXPRESSED OR IMPLIED,INCLUDING,BUT NOT LIMITED TO,
 //   THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
 //   PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM 
-//   IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF 
-//   ALL NECESSARY SERVICING, REPAIR OR CORRECTION. 
+//   IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE,YOU ASSUME THE COST OF 
+//   ALL NECESSARY SERVICING,REPAIR OR CORRECTION. 
 //  
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -93,15 +93,15 @@
 module rom_twiddle_int
   #(
     parameter 
-    NFFT  = 16,
-    STAGE = 4,
-    AWD   = 16,
-    XSER  = "OLD"
+    NFFT  = 16,    // --! Number of FFT butterflies
+    STAGE = 4,     // --! Stage of FFT (from 0 to NFFT-1)
+    AWD   = 16,    // --! Twiddle magnitude
+    XSER  = "OLD"  // --! FPGA Xilinx series: 7-series, Ultrascale
   )
   (
-  input clk, rst, 
-  output signed [AWD-1:0] ww_re, ww_im,
-  output ww_en
+    input clk, rst,
+    output reg signed [AWD-1:0] ww_re, ww_im,
+    output ww_en
   );
 
   // functions declaration //
@@ -144,39 +144,102 @@ module rom_twiddle_int
   end
   endfunction
 
-  // Create ROM data
+  // Create ROM data: 1/4 of sin / cos period on NFFT points
   function [2*AWD-1 : 0] rom_twiddle;
     input integer ii;
 
-    real phase, magn;
-    reg [AWD-1 : 0] sig_re, sig_im;
+    real phase,magn;
+    reg [AWD-1 : 0] sig_re,sig_im;
   begin
     magn = (AWD < 18) ? (2.0 ** (AWD-1) - 1.0) : (2.0 ** (AWD-2) - 1.0); 
 
     phase = (ii * MATH_PI) / (2.0 ** (DEPTH+1));
 
-    sig_re = $rtoi(magn * find_cos(phase)); // $rtoi(real_number);
+    sig_re = $rtoi(magn * find_cos(phase));
     sig_im = $rtoi(magn * find_sin(phase));
 
-    rom_twiddle = {sig_im, sig_re};
+    rom_twiddle = {sig_im,sig_re};
   end
   endfunction
 
+  // Assign ROM data
   integer i; 
   reg [2*AWD-1 : 0] arr_data [0 : 2**DEPTH-1];
   initial begin
-    for (i = 0; i < 2**DEPTH; i = i + 1) 
-      arr_data[i] = rom_twiddle(i); 
+    for (i = 0; i < 2**DEPTH; i = i + 1) begin 
+      arr_data[i] = rom_twiddle(i);
+    end 
   end
   
-  reg [STAGE-1:0] cnt;
-  wire div;
-  
+
+  // -- Twiddle Re/Im parts calculating --
+  reg [2*AWD-1 : 0] ram, ww_rom;
+  reg div;
+
   always @(posedge clk) begin
-  if (rst) cnt <= 0;
-  else cnt <= cnt + 1;
+    if (div) begin
+      ww_rom <= ram;
+    end else begin
+      ww_rom[2*AWD-1 : 1*AWD] <= 0 - ram[AWD-1 : 0];
+      ww_rom[1*AWD-1 : 0*AWD] <= ram[2*AWD-1 : AWD];
+    end
   end
 
-  assign div = cnt[STAGE-1];
-  
+  reg  [STAGE-1:0] cnt;
+  wire [STAGE-2:0] adr;
+
+  // ---- Counter / Address increment ----
+  generate
+    if (STAGE > 0) begin
+      assign adr = cnt[STAGE-2 : 0];
+      always @(posedge clk) div <= cnt[STAGE-1];
+
+      always @(posedge clk) begin
+        if (rst) 
+          cnt <= 0;
+        else 
+          cnt <= cnt + 1;
+      end
+    end
+  endgenerate
+
+  // ---- Execute Twiddles function ----
+  generate
+    // ---- Middle stage ----
+    if (STAGE < 11) begin
+      always @(posedge clk) begin
+        ww_re <= ww_rom[1*AWD-1 : 0];
+        ww_im <= ww_rom[2*AWD-1 : AWD];
+      end
+
+      always @(posedge clk) ram <= arr_data[adr];
+    // ---- Long stage ----
+    end else begin
+      wire [8 : 0] adrx;
+      reg [STAGE-11 : 0] count;
+
+      assign adrx  = adr[STAGE-2 : STAGE-10];
+      
+      always @(posedge clk) count <= adr[STAGE-11 : 0];
+      always @(posedge clk) ram <= arr_data[adrx];
+      
+      row_twiddle_tay #(
+        .AWD(AWD),
+        .XSER(XSER),
+        .STG(STAGE-11)
+      )
+      twdTAYLOR (
+        .rst(rst),
+        .clk(clk),
+
+        .rom_ww(ww_rom),
+        .rom_cnt(count),
+
+        .rom_re(ww_re),
+        .rom_im(ww_im)
+      );
+
+    end
+  endgenerate
+
 endmodule

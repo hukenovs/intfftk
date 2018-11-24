@@ -53,7 +53,7 @@
 
 module mlt61x18_dsp48e2
     (
-        input   RST,CLK,
+        input   RST, CLK,
         input  [58:0] MLT_A,
         input  [17:0] MLT_B,
         output reg [76:0] MLT_P

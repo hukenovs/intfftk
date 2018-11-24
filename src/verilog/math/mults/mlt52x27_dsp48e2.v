@@ -53,7 +53,7 @@
 
 module mlt52x27_dsp48e2
     (
-        input   RST,CLK,
+        input   RST, CLK,
         input  [51:0] MLT_A,
         input  [26:0] MLT_B,
         output reg [78:0] MLT_P

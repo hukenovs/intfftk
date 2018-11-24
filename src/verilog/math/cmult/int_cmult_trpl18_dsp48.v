@@ -78,10 +78,10 @@ module int_cmult_trpl18_dsp48
         XALU  = 4'b0000
     )
     (
-        input CLK,RST,
+        input CLK, RST,
         
-        input [MAW-1 : 0] M1_AA,M2_AA,
-        input [MBW-1 : 0] M1_BB,M2_BB,
+        input [MAW-1 : 0] M1_AA, M2_AA,
+        input [MBW-1 : 0] M1_BB, M2_BB,
         output signed [MAW-1 : 0] MP_12
     );
 
@@ -91,12 +91,12 @@ module int_cmult_trpl18_dsp48
     localparam integer PWD = (XSER == "NEW") ? 79 : 77;
 
     // ---- DSP48 signal declaration ----
-    wire [AWD-1 : 0] dspA_M1,dspA_M2;
-    wire [17 : 0] dspB_M1,dspB_M2;
+    wire [AWD-1 : 0] dspA_M1, dspA_M2;
+    wire [17 : 0] dspB_M1, dspB_M2;
 
-    wire [PWD-1 : 0] dspP_M1,dspP_M2;
+    wire [PWD-1 : 0] dspP_M1, dspP_M2;
 
-    wire [MAW-1 : 0] dsp1_48,dsp2_48;
+    wire [MAW-1 : 0] dsp1_48, dsp2_48;
 
     wire [29 : 0] dspA_12;
     wire [17 : 0] dspB_12;
@@ -104,10 +104,10 @@ module int_cmult_trpl18_dsp48
     reg  [MAW-1 : 0] dspP_12;    
     
     // ---- Wrap input data ----
-    assign dspB_M1 = { {(18-MBW){M1_BB[MBW-1]}},M1_BB[MBW-1 : 0] };
-    assign dspB_M2 = { {(18-MBW){M2_BB[MBW-1]}},M2_BB[MBW-1 : 0] };
-    assign dspA_M1 = { {(AWD-MAW){M1_AA[MAW-1]}},M1_AA[MAW-1 : 0] };
-    assign dspA_M2 = { {(AWD-MAW){M2_AA[MAW-1]}},M2_AA[MAW-1 : 0] };
+    assign dspB_M1 = { {(18-MBW){M1_BB[MBW-1]}}, M1_BB[MBW-1 : 0] };
+    assign dspB_M2 = { {(18-MBW){M2_BB[MBW-1]}}, M2_BB[MBW-1 : 0] };
+    assign dspA_M1 = { {(AWD-MAW){M1_AA[MAW-1]}}, M1_AA[MAW-1 : 0] };
+    assign dspA_M2 = { {(AWD-MAW){M2_AA[MAW-1]}}, M2_AA[MAW-1 : 0] };
     
     // ---- Min value MBW = 6 (4)! ----
     assign dsp1_48 = dspP_M1[MAW+MBW-2 : MBW-1];
@@ -123,14 +123,14 @@ module int_cmult_trpl18_dsp48
             reg  [47 : 0] dspC_48;
             wire [47 : 0] dspP_48;
 
-            wire [47 : 0] dsp1_DT,dsp2_DT;    
+            wire [47 : 0] dsp1_DT, dsp2_DT;    
 
             always @(*) begin
                 dspP_12 = dspP_48[MAW-1 : 0];
             end
             
-            assign dsp1_DT = { {(48-MAW){dsp1_48[MAW-1]}},dsp1_48[MAW-1 : 0] };
-            assign dsp2_DT = { {(48-MAW){dsp2_48[MAW-1]}},dsp2_48[MAW-1 : 0] };
+            assign dsp1_DT = { {(48-MAW){dsp1_48[MAW-1]}}, dsp1_48[MAW-1 : 0] };
+            assign dsp2_DT = { {(48-MAW){dsp2_48[MAW-1]}}, dsp2_48[MAW-1 : 0] };
 
             // ---- Map adder ----
             assign dspA_48 = dsp1_DT[47 : 18];
@@ -302,11 +302,11 @@ module int_cmult_trpl18_dsp48
             end            
         end else begin
             
-            wire [47 : 0] dsp1_LO,dsp2_LO,dsp1_HI,dsp2_HI;
-            wire [47 : 0] dspC_LO,dspP_LO,dspP_HI;
+            wire [47 : 0] dsp1_LO, dsp2_LO, dsp1_HI, dsp2_HI;
+            wire [47 : 0] dspC_LO, dspP_LO, dspP_HI;
             reg  [47 : 0] dspC_HI;
-            wire [29 : 0] dspA_LO,dspA_HI;
-            wire [17 : 0] dspB_LO,dspB_HI;
+            wire [29 : 0] dspA_LO, dspA_HI;
+            wire [17 : 0] dspB_LO, dspB_HI;
     
             wire dspP_CY;
 
@@ -320,8 +320,8 @@ module int_cmult_trpl18_dsp48
             assign dsp1_LO = dsp1_48[47 : 0];
             assign dsp2_LO = dsp2_48[47 : 0];
 
-            assign dsp1_HI = { {(48-MAW){dsp1_48[MAW-1]}},dsp1_48[MAW-1 : 0] };
-            assign dsp2_HI = { {(48-MAW){dsp2_48[MAW-1]}},dsp2_48[MAW-1 : 0] };
+            assign dsp1_HI = { {(48-MAW){dsp1_48[MAW-1]}}, dsp1_48[MAW-1 : 0] };
+            assign dsp2_HI = { {(48-MAW){dsp2_48[MAW-1]}}, dsp2_48[MAW-1 : 0] };
 
             // ---- Map adder ----
             assign dspA_LO = dsp1_LO[47 : 18];
