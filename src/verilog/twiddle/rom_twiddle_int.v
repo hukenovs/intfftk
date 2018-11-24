@@ -96,7 +96,7 @@ module rom_twiddle_int
     NFFT  = 16,
     STAGE = 4,
     AWD   = 16,
-	XSER  = "OLD"
+    XSER  = "OLD"
   )
   (
   input clk, rst, 
@@ -105,30 +105,26 @@ module rom_twiddle_int
   );
 
   // functions declaration //
-  function find_depth;
-    input avar;
+  function integer find_depth;
+    input integer avar;
   begin
-    if ((avar > 0) & (avar < 11)) find_depth = (avar-1);  
+    if ((avar > 0) && (avar < 11)) find_depth = (avar-1);  
     else find_depth = 9;
   end
   endfunction
   
-  localparam DEPTH = find_depth(NFFT);
-  localparam MATH_PI = 3.14159265359;
+  localparam DEPTH = find_depth(STAGE);
+  localparam real MATH_PI = 3.14159265358979323846;
 
   // Factorial function: y = x! if x = 0 or 1 then y = 1 else y = factorial(x)
-  function real fn_fact;
-    input real x;
+  function automatic [63:0] fn_fact;
+    input [4:0] x;
     integer i;
-    real ret;
   begin
-    ret = 1.0;
-    if (x > 1) begin
-      for (i = 2; i < x; i = i + 1) begin
-        x = x * i;
-      end
-    end
-    fn_fact = ret;
+    if (x > 1)
+      fn_fact = fn_fact(x-1) * x;
+    else 
+      fn_fact = 1;
   end
   endfunction
 
@@ -149,29 +145,30 @@ module rom_twiddle_int
   endfunction
 
   // Create ROM data
-  reg [2*AWD-1 : 0] arr_data [0 : 2**DEPTH-1];
-
-  function [2*AWD-1 : 0] [0 : 2**DEPTH-1] rom_twiddle;
-    input Amp, Len;
+  function [2*AWD-1 : 0] rom_twiddle;
+    input integer ii;
 
     real phase, magn;
     reg [AWD-1 : 0] sig_re, sig_im;
-    integer i;
   begin
-    magn = (Amp < 18) ? (2.0 ** (Amp-1)) - 1.0 : (2.0 ** (Amp-2)) - 1.0; 
+    magn = (AWD < 18) ? (2.0 ** (AWD-1) - 1.0) : (2.0 ** (AWD-2) - 1.0); 
 
-    for (i = 0; i < 2**Len; i = i + 1) begin
-      phase = (i * MATH_PI) / (2.0 ** (Len+1));
+    phase = (ii * MATH_PI) / (2.0 ** (DEPTH+1));
 
-      sig_re = $rtoi(magn * find_cos(phase)); // $rtoi(real_number);
-      sig_im = $rtoi(magn * find_sin(phase));
+    sig_re = $rtoi(magn * find_cos(phase)); // $rtoi(real_number);
+    sig_im = $rtoi(magn * find_sin(phase));
 
-      rom_twiddle[i] = {sig_im, sig_re};
-    end
+    rom_twiddle = {sig_im, sig_re};
   end
   endfunction
 
-
+  integer i; 
+  reg [2*AWD-1 : 0] arr_data [0 : 2**DEPTH-1];
+  initial begin
+    for (i = 0; i < 2**DEPTH; i = i + 1) 
+      arr_data[i] = rom_twiddle(i); 
+  end
+  
   reg [STAGE-1:0] cnt;
   wire div;
   
@@ -182,8 +179,4 @@ module rom_twiddle_int
 
   assign div = cnt[STAGE-1];
   
-  
 endmodule
-
-
-
