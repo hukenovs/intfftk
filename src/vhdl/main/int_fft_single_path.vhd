@@ -19,6 +19,7 @@
 --		
 --		XSERIES			- (p) -	FPGA Series: ULTRASCALE / 7SERIES
 --		USE_MLT			- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
+--		FORMAT			- (p) -	1 - Use Unscaled mode / 0 - Scaled (truncate) mode
 --
 -- where: (p) - generic parameter, (s) - signal.
 --
@@ -59,6 +60,7 @@ entity int_fft_single_path is
 		NFFT			: integer:=13;			--! Number of FFT stages
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
+		FORMAT			: integer:=1;			--! 1 - unscaled, 0 - scaled mode for output data
 		XSERIES			: string:="NEW";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
 		USE_MLT			: boolean:=FALSE 		--! Use Multiplier for calculation M_PI in Twiddle factor
 	);														  
@@ -73,8 +75,8 @@ entity int_fft_single_path is
 		DI_IM			: in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Im data input
 		DI_EN			: in  std_logic; --! Data enable
 		---- Output data ----
-		DO_RE 			: out std_logic_vector(DATA_WIDTH+NFFT-1 downto 0); --! Output data Even
-		DO_IM 			: out std_logic_vector(DATA_WIDTH+NFFT-1 downto 0); --! Output data Odd
+		DO_RE 			: out std_logic_vector(DATA_WIDTH+FORMAT*NFFT-1 downto 0); --! Output data Even
+		DO_IM 			: out std_logic_vector(DATA_WIDTH+FORMAT*NFFT-1 downto 0); --! Output data Odd
 		DO_VL			: out std_logic	--! Output valid data
 	);
 	
@@ -96,32 +98,32 @@ signal di_im0			: std_logic_vector(DATA_WIDTH-1 downto 0);
 signal di_re1 			: std_logic_vector(DATA_WIDTH-1 downto 0);
 signal di_im1			: std_logic_vector(DATA_WIDTH-1 downto 0);
 
-signal do_re0			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_im0			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_re1 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_im1			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+signal do_re0			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_im0			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_re1 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_im1			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 
 signal di_ena			: std_logic;
 signal do_val			: std_logic;
 
 ---------------- Shuffle data ----------------
-signal dt_int0			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
-signal dt_int1			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
+signal dt_int0			: std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
+signal dt_int1			: std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
 signal dt_en01			: std_logic;     
 
-signal dt_rev0			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
-signal dt_rev1			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
+signal dt_rev0			: std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
+signal dt_rev1			: std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
 signal dt_vl01			: std_logic;
 
-signal qx_dt			: std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
+signal qx_dt			: std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
 
 ---------------- Output data ----------------
-signal dx_re 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal dx_im 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+signal dx_re 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal dx_im 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 signal dx_en			: std_logic;			
 	
-signal dr_re 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal dr_im 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+signal dr_re 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal dr_im 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 signal dr_en			: std_logic;			
 	
 begin
@@ -160,6 +162,7 @@ xFFT: entity work.int_fftNk
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
 		RAMB_TYPE	=> "CONT",
+		FORMAT		=> FORMAT,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
 		XSER		=> XSERIES,
@@ -193,7 +196,7 @@ xSHL_BUF: entity work.iobuf_flow_int2
 	generic map (
 		BITREV		=> FALSE,
 		ADDR 		=> NFFT,
-		DATA		=> 2*(NFFT+DATA_WIDTH)
+		DATA		=> 2*(FORMAT*NFFT+DATA_WIDTH)
 	)
 	port map (
 		clk 		=> clk,
@@ -212,7 +215,7 @@ xSHL_BUF: entity work.iobuf_flow_int2
 xOUT_BUF : entity work.outbuf_half_path
 	generic map (
 		ADDR 		=> NFFT,
-		DATA		=> 2*(NFFT+DATA_WIDTH)
+		DATA		=> 2*(FORMAT*NFFT+DATA_WIDTH)
 	)
 	port map (
 		clk 		=> clk,
@@ -226,14 +229,14 @@ xOUT_BUF : entity work.outbuf_half_path
 		do_en		=> dx_en	
 	);
 
-dx_re(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(NFFT+DATA_WIDTH)-1 downto 0*(NFFT+DATA_WIDTH));
-dx_im(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(NFFT+DATA_WIDTH)-1 downto 1*(NFFT+DATA_WIDTH));
+dx_re(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*NFFT+DATA_WIDTH));
+dx_im(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*NFFT+DATA_WIDTH));
 
 -------------------- BIT REVERSE ORDER --------------------
 xBITREV_RE : entity work.int_bitrev_ord
 	generic map (
 		STAGES		=> NFFT,
-		NWIDTH		=> NFFT+DATA_WIDTH	
+		NWIDTH		=> FORMAT*NFFT+DATA_WIDTH	
 	)
 	port map (
 		clk 		=> clk,
@@ -248,7 +251,7 @@ xBITREV_RE : entity work.int_bitrev_ord
 xBITREV_IM : entity work.int_bitrev_ord
 	generic map (
 		STAGES		=> NFFT,
-		NWIDTH		=> NFFT+DATA_WIDTH	
+		NWIDTH		=> FORMAT*NFFT+DATA_WIDTH	
 	)
 	port map (
 		clk 		=> clk,

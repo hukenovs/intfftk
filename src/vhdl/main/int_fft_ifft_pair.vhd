@@ -1,12 +1,12 @@
 -------------------------------------------------------------------------------
 --
 -- Title       : int_fft_ifft_pair
--- Design      : FFT (UNSCALED INTEGER)
+-- Design      : FFT _+ IFFT (Scaled / Unscaled Fixed point)
 -- Author      : Kapitanov Alexander
 -- Company     : 
 -- E-mail      : sallador@bk.ru
 --
--- Description : Main module for FFT/IFFT logic (unscaled)
+-- Description : Main module for FFT/IFFT logic
 --
 -- Has several important constants:
 --
@@ -24,6 +24,7 @@
 --			"OLD" - 6/7-SERIES;
 --
 --		USE_MLT			- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
+--		FORMAT			- (p) -	1 - Use Unscaled mode / 0 - Scaled (truncate) mode
 --
 -- where: (p) - generic parameter, (s) -  input signal.
 --
@@ -67,6 +68,7 @@ entity int_fft_ifft_pair is
 		TD				: time:=0.1ns;  		--! Simulation time	
 		NFFT			: integer:=16;			--! Number of FFT stages
 		RAMB_TYPE		: string:="WRAP";		--! Cross-commutation type: WRAP / CONT
+		FORMAT			: integer:=1;			--! 1 - unscaled, 0 - scaled mode for output data
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
 		XSERIES			: string:="NEW";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
@@ -86,8 +88,8 @@ entity int_fft_ifft_pair is
 		D1_IM			: in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Imag: 2'nd data part [N/2:N)	
 		DI_EN			: in  std_logic; --! Data enable strobe (valid)
 		---- Output data ----
-		DO_RE 			: out std_logic_vector(DATA_WIDTH+2*NFFT-1 downto 0); --! Output data Even
-		DO_IM 			: out std_logic_vector(DATA_WIDTH+2*NFFT-1 downto 0); --! Output data Odd
+		DO_RE 			: out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output data Even
+		DO_IM 			: out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output data Odd
 		DO_VL			: out std_logic	--! Output valid data
 	);
 end int_fft_ifft_pair;
@@ -108,37 +110,37 @@ signal di_im0			: std_logic_vector(DATA_WIDTH-1 downto 0);
 signal di_re1 			: std_logic_vector(DATA_WIDTH-1 downto 0);
 signal di_im1			: std_logic_vector(DATA_WIDTH-1 downto 0);
 
-signal do_re0			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_im0			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_re1 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_im1			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+signal do_re0			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_im0			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_re1 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_im1			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 
 signal di_ena			: std_logic;
 signal do_val			: std_logic;
 
 ---------------- Inverse FFT ----------------
-signal fi_re0			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal fi_im0			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal fi_re1 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal fi_im1			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+signal fi_re0			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal fi_im0			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal fi_re1 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal fi_im1			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 
-signal fo_re0			: std_logic_vector(2*NFFT+DATA_WIDTH-1 downto 0);
-signal fo_im0			: std_logic_vector(2*NFFT+DATA_WIDTH-1 downto 0);
-signal fo_re1 			: std_logic_vector(2*NFFT+DATA_WIDTH-1 downto 0);
-signal fo_im1			: std_logic_vector(2*NFFT+DATA_WIDTH-1 downto 0);
+signal fo_re0			: std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
+signal fo_im0			: std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
+signal fo_re1 			: std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
+signal fo_im1			: std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
 
 signal fi_ena			: std_logic;
 signal fo_val			: std_logic;
 
 ---------------- Shuffle data ----------------
-signal dt_int0			: std_logic_vector(2*(2*NFFT+DATA_WIDTH)-1 downto 0);    
-signal dt_int1			: std_logic_vector(2*(2*NFFT+DATA_WIDTH)-1 downto 0);    
+signal dt_int0			: std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);    
+signal dt_int1			: std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);    
 signal dt_en01			: std_logic;     
 
-signal qx_dt			: std_logic_vector(2*(2*NFFT+DATA_WIDTH)-1 downto 0);
+signal qx_dt			: std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);
 ---------------- Output data ----------------
-signal dx_re 			: std_logic_vector(2*NFFT+DATA_WIDTH-1 downto 0);
-signal dx_im 			: std_logic_vector(2*NFFT+DATA_WIDTH-1 downto 0);
+signal dx_re 			: std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
+signal dx_im 			: std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
 signal dx_en			: std_logic;			
 	
 begin
@@ -201,6 +203,7 @@ xFFT: entity work.int_fftNk
 	generic map (
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
+		FORMAT		=> FORMAT,
 		RAMB_TYPE	=> RAMB_TYPE,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -237,6 +240,7 @@ xIFFT: entity work.int_ifftNk
 	generic map (
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
+		FORMAT		=> FORMAT,		
 		RAMB_TYPE	=> RAMB_TYPE,		
 		DATA_WIDTH	=> DATA_WIDTH+NFFT,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -272,7 +276,7 @@ xCONT_OUT: if (RAMB_TYPE = "CONT") generate
 		generic map (
 			BITREV		=> TRUE,
 			ADDR 		=> NFFT,
-			DATA		=> 2*(2*NFFT+DATA_WIDTH)
+			DATA		=> 2*(FORMAT*2*NFFT+DATA_WIDTH)
 		)
 		port map (
 			clk 		=> clk,
@@ -293,7 +297,7 @@ xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
 		generic map (
 			BITREV		=> FALSE,
 			ADDR 		=> NFFT,
-			DATA		=> 2*(2*NFFT+DATA_WIDTH)
+			DATA		=> 2*(FORMAT*2*NFFT+DATA_WIDTH)
 		)	
 		port map (
 			clk  		=> clk,
@@ -316,7 +320,7 @@ end generate;
 xOUT_BUF : entity work.outbuf_half_path
 	generic map (
 		ADDR 		=> NFFT,
-		DATA		=> 2*(2*NFFT+DATA_WIDTH)
+		DATA		=> 2*(FORMAT*2*NFFT+DATA_WIDTH)
 	)
 	port map (
 		clk 		=> clk,
@@ -330,8 +334,8 @@ xOUT_BUF : entity work.outbuf_half_path
 		do_en		=> dx_en	
 	);
 
-do_re(2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(2*NFFT+DATA_WIDTH)-1 downto 0*(2*NFFT+DATA_WIDTH));
-do_im(2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(2*NFFT+DATA_WIDTH)-1 downto 1*(2*NFFT+DATA_WIDTH));
+do_re(FORMAT*2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*2*NFFT+DATA_WIDTH));
+do_im(FORMAT*2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*2*NFFT+DATA_WIDTH));
 
 do_vl <= dx_en;
 
