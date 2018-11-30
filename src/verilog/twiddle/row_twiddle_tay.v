@@ -174,7 +174,7 @@ module row_twiddle_tay
 
     // ---- Counter / Address increment ----
     generate
-        if (XSER == "OLD") begin
+        if (XSER == "OLD") begin : xDSP48E1
 
             DSP48E1 #(
                 .ACASCREG(1),
@@ -297,7 +297,7 @@ module row_twiddle_tay
                 .RSTM(rst),
                 .RSTP(rst)
             );
-        end else begin
+        end else begin : xDSP48E2
 
             DSP48E2 #(
                 .ACASCREG(1),

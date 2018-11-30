@@ -99,19 +99,19 @@ module int_dit2_fly
 
     localparam ADD_DELAY = (DTW < 48) ? 2 : 3;
 
-    reg [DTW-SCALE : 0] az_re, az_im, bw_re, bw_im;
+    reg [DTW-1 : 0] az_re, az_im, bw_re, bw_im;
 
     // ---------------------------------------------------------------
     // -------- SUM = (A + B), DIF = (A-B) --------
     int_addsub_dsp48 #(
-        .DSPW(DTW),
+        .DSPW(DTW-SCALE),
         .XSER(XSER)
     )
     xADD_RE (
-        .IA_RE(az_re),
-        .IA_IM(az_im),
-        .IB_RE(bw_re),
-        .IB_IM(bw_im),
+        .IA_RE(az_re[DTW-1 : SCALE]),
+        .IA_IM(az_im[DTW-1 : SCALE]),
+        .IB_RE(bw_re[DTW-1 : SCALE]),
+        .IB_IM(bw_im[DTW-1 : SCALE]),
 
         .OX_RE(oa_re),
         .OX_IM(oa_im),
@@ -144,11 +144,8 @@ module int_dit2_fly
 
             // ---- Counter for twiddle factor ----
             always @(posedge clk) begin
-                if (rst)
-                    dt_sw <= 0;
-                else if (in_en)
-                    dt_sw <= ~dt_sw;
-            end
+                dt_sw <= (rst) ? 0 : ( (in_en) ? (~dt_sw) : dt_sw );
+            end           
 
             /* --------------------------------------------------------------
                ---- NB! Multiplication by (-1) is the same as inverse.   ----
@@ -184,21 +181,26 @@ module int_dit2_fly
 
             localparam DATA_DELAY = find_delay(XSER, DTW+1-SCALE, TFW);
 
-            reg [DTW-SCALE : 0] dz_re [0 : DATA_DELAY-1];
-            reg [DTW-SCALE : 0] dz_im [0 : DATA_DELAY-1];
+            reg [DTW-SCALE : 0] dz_re [0 : DATA_DELAY-2];
+            reg [DTW-SCALE : 0] dz_im [0 : DATA_DELAY-2];
             reg [DATA_DELAY+ADD_DELAY-1 : 0] vl_zz;
             
             always @(posedge clk) vl_zz <= {vl_zz[DATA_DELAY+ADD_DELAY-2 : 0], in_en};
 
             integer i;
             always @ (posedge clk) begin
-                for (i = 1; i < DATA_DELAY; i = i + 1) begin
+                for (i = 1; i < DATA_DELAY-1; i = i + 1) begin
                     dz_re[i] <= dz_re[i-1];
                     dz_im[i] <= dz_im[i-1];
                 end
                 dz_re[0] <= ia_re;
                 dz_im[0] <= ia_im;
             end
+
+            always @(posedge clk) begin
+                az_re <= dz_re[DATA_DELAY-2];
+                az_im <= dz_im[DATA_DELAY-2];
+            end            
 
             // -------- PROD = DIF * WW --------    
             int_cmult_dsp48 #( 

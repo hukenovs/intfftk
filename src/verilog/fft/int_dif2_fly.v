@@ -67,7 +67,6 @@ module int_dif2_fly
     );
 
     // functions declaration //
-
     function integer find_delay;
         input sVAR;
         input integer iDW, iTW;
@@ -98,7 +97,6 @@ module int_dif2_fly
         end
     end
     endfunction
-
 
     localparam ADD_DELAY = (DTW < 48) ? 2 : 3;
 
@@ -149,10 +147,7 @@ module int_dif2_fly
 
             // ---- Counter for twiddle factor ----
             always @(posedge clk) begin
-                if (rst) 
-                    dt_sw <= 0;
-                else if (vl_zz[ADD_DELAY-1]) 
-                    dt_sw <= ~dt_sw;
+                dt_sw <= (rst) ? 0 : ( (vl_zz[ADD_DELAY-1]) ? (~dt_sw) : dt_sw );
             end
 
             /* --------------------------------------------------------------

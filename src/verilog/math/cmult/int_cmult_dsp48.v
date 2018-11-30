@@ -110,10 +110,10 @@ module int_cmult_dsp48
 
     // ---- Twiddle factor width less than 19 ----
     generate
-        if (TWD < 19) begin
+        if (TWD < 19) begin : xTWDL18
 
             // ---- Data width from 8 to 25/27 ----
-            if (DTW < DTW18_SNGL) begin
+            if (DTW < DTW18_SNGL) begin : xSNGL_DSP
                 wire [47 : 0] P_RE, P_IM;
     
                 assign D_RE = P_RE[DTW+TWD-2 : TWD-1];
@@ -126,7 +126,7 @@ module int_cmult_dsp48
                 xMDSP_IM ( .M1_AA(DI_IM), .M1_BB(WW_RE), .M2_AA(DI_RE), .M2_BB(WW_IM), .MP_12(P_IM), .RST(RST), .CLK(CLK) );
             
             // ---- Data width from 25/27 to 42/44 ----
-            end else if ((DTW > DTW18_SNGL-1) & (DTW < DTW18_DBL)) begin
+            end else if ((DTW > DTW18_SNGL-1) & (DTW < DTW18_DBL)) begin : xDBL_DSP
     
                 int_cmult_dbl18_dsp48 #( .MAW(DTW), .MBW(TWD), .XALU(4'b0011), .XSER(XSER))
                 xMDSP_RE ( .M1_AA(DI_IM), .M1_BB(WW_IM), .M2_AA(DI_RE), .M2_BB(WW_RE), .MP_12(D_RE), .RST(RST), .CLK(CLK) );
@@ -135,7 +135,7 @@ module int_cmult_dsp48
                 xMDSP_IM ( .M1_AA(DI_IM), .M1_BB(WW_RE), .M2_AA(DI_RE), .M2_BB(WW_IM), .MP_12(D_IM), .RST(RST), .CLK(CLK) );    
             
             // ---- Data width from 42/44 to 59/61 ----
-            end else if ((DTW > DTW18_DBL-1) & (DTW < DTW18_TRPL)) begin
+            end else if ((DTW > DTW18_DBL-1) & (DTW < DTW18_TRPL)) begin : xTRPL_DSP
                 
                 int_cmult_trpl18_dsp48 #( .MAW(DTW), .MBW(TWD), .XALU(4'b0011), .XSER(XSER))
                 xMDSP_RE ( .M1_AA(DI_IM), .M1_BB(WW_IM), .M2_AA(DI_RE), .M2_BB(WW_RE), .MP_12(D_RE), .RST(RST), .CLK(CLK) );
@@ -146,10 +146,10 @@ module int_cmult_dsp48
             end
 
         // ---- Twiddle factor width more than 18 and less than 25/27 ----
-        end else if ((TWD > 18) & (TWD < TWD_DSP)) begin
+        end else if ((TWD > 18) & (TWD < TWD_DSP)) begin : xTWDL25
     
             //---- Data width from 8 to 18 ----
-            if (DTW < 19) begin
+            if (DTW < 19) begin : xSNGL_DSP
                 wire [47 : 0] P_RE;
                 wire [47 : 0] P_IM;
     
@@ -163,7 +163,7 @@ module int_cmult_dsp48
                 xMDSP_IM ( .M1_AA(WW_RE), .M1_BB(DI_IM), .M2_AA(WW_IM), .M2_BB(DI_RE), .MP_12(P_IM), .RST(RST), .CLK(CLK) );        
             
             // ---- Data width from 18 to 35 ----
-            end else if ((DTW > 18) & (DTW < 36)) begin
+            end else if ((DTW > 18) & (DTW < 36)) begin : xDBL_DSP
     
                 int_cmult_dbl35_dsp48 #( .MAW(DTW), .MBW(TWD), .XALU(4'b0011), .XSER(XSER))
                 xMDSP_RE ( .M1_AA(DI_IM), .M1_BB(WW_IM), .M2_AA(DI_RE), .M2_BB(WW_RE), .MP_12(D_RE), .RST(RST), .CLK(CLK) );
@@ -172,7 +172,7 @@ module int_cmult_dsp48
                 xMDSP_IM ( .M1_AA(DI_IM), .M1_BB(WW_RE), .M2_AA(DI_RE), .M2_BB(WW_IM), .MP_12(D_IM), .RST(RST), .CLK(CLK) );            
             
             // ---- Data width from 35 to 52 ----
-            end else if ((DTW > 35) & (DTW < 53)) begin
+            end else if ((DTW > 35) & (DTW < 53)) begin : xTRPL_DSP
             
                 int_cmult_trpl52_dsp48 #( .MAW(DTW), .MBW(TWD), .XALU(4'b0011), .XSER(XSER))
                 xMDSP_RE ( .M1_AA(DI_IM), .M1_BB(WW_IM), .M2_AA(DI_RE), .M2_BB(WW_RE), .MP_12(D_RE), .RST(RST), .CLK(CLK) );

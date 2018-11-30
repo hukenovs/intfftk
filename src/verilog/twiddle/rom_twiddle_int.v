@@ -118,12 +118,8 @@ module rom_twiddle_int
     // Factorial function: y = x! if x = 0 or 1 then y = 1 else y = factorial(x)
     function automatic [63:0] fn_fact;
         input [4:0] x;
-        integer i;
     begin
-        if (x > 1)
-            fn_fact = fn_fact(x-1) * x;
-        else 
-            fn_fact = 1;
+        fn_fact = (x > 1) ? (fn_fact(x-1) * x) : 1;
     end
     endfunction
 
@@ -203,7 +199,7 @@ module rom_twiddle_int
     // ---- Execute Twiddles function ----
     generate
         // ---- Middle stage ----
-        if (STAGE < 11) begin
+        if (STAGE < 11) begin : xTwiddle
             always @(posedge clk) begin
                 ww_re <= ww_rom[1*AWD-1 : 0];
                 ww_im <= ww_rom[2*AWD-1 : AWD];
@@ -211,7 +207,7 @@ module rom_twiddle_int
 
             always @(posedge clk) ram <= arr_data[adr];
         // ---- Long stage ----
-        end else begin
+        end else begin : xTaylor
             wire [8 : 0] adrx;
             reg [STAGE-11 : 0] count;
 
