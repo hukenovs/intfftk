@@ -54,6 +54,7 @@ entity int_dit2_fly is
 	generic(
 		IS_SIM		: boolean:=FALSE; --! Simulation model: TRUE / FALSE
 		STAGE		: integer:=0;  --! Butterfly stages
+		SCALE		: integer:=0;  --! 1 - Scaled FFT, 0 - Unscaled
 		DTW			: integer:=16; --! Data width
 		TFW			: integer:=16; --! Twiddle factor width
 		XSER 		: string:="OLD" --! Xilinx series: NEW - DSP48E2, OLD - DSP48E1
@@ -82,62 +83,38 @@ end int_dit2_fly;
 architecture int_dit2_fly of int_dit2_fly is
 
 function find_delay(sVAR : string; iDW, iTW: integer) return integer is
-	variable ret_val : integer:=0;
+	variable ret_val : integer;
+	variable loDSP : integer;
+	variable hiDSP : integer;
 begin
-	---- DSP48E1 ----
-	if (sVAR = "OLD") then 
-		---- TWIDDLE WIDTH UP TO 18 ----
-		if (iTW < 19) then
-			if (iDW < 26) then
-				ret_val := 4;
-			elsif ((iDW > 25) and (iDW < 43)) then
-				ret_val := 6;
-			else
-				ret_val := 8;
-			end if;
-		---- TWIDDLE WIDTH FROM 18 TO 25 ----
-		elsif ((iTW > 18) and (iTW < 26)) then
-			if (iDW < 19) then
-				ret_val := 4;
-			elsif ((iDW > 18) and (iDW < 36)) then
-				ret_val := 6;
-			else
-				ret_val := 8;
-			end if;		
+	if (sVAR = "OLD") then loDSP := 25; else loDSP := 27; end if;
+	if (sVAR = "OLD") then hiDSP := 43; else hiDSP := 45; end if;
+
+	---- TWIDDLE WIDTH UP TO 18 ----
+	if (iTW < 19) then
+		if (iDW <= loDSP) then
+			ret_val := 4;
+		elsif ((iDW > loDSP) and (iDW < hiDSP)) then
+			ret_val := 6;
 		else
-			ret_val := 0; 
+			ret_val := 8;
 		end if;
-	---- DSP48E2 ----
-	elsif (sVAR = "NEW") then 
-		---- TWIDDLE WIDTH UP TO 18 ----
-		if (iTW < 19) then
-			if (iDW < 28) then
-				ret_val := 4;
-			elsif ((iDW > 27) and (iDW < 45)) then
-				ret_val := 6;
-			else
-				ret_val := 8;
-			end if;
-		---- TWIDDLE WIDTH FROM 18 TO 25 ----
-		elsif ((iTW > 18) and (iTW < 28)) then
-			if (iDW < 19) then
-				ret_val := 4;
-			elsif ((iDW > 18) and (iDW < 36)) then
-				ret_val := 6;
-			else
-				ret_val := 8;
-			end if;		
+	---- TWIDDLE WIDTH FROM 18 TO 25 ----
+	elsif ((iTW > 18) and (iTW <= loDSP)) then
+		if (iDW < 19) then
+			ret_val := 4;
+		elsif ((iDW > 18) and (iDW < 36)) then
+			ret_val := 6;
 		else
-			ret_val := 0;
-		end if;
-	else 
-		ret_val := 0;
+			ret_val := 8;
+		end if;		
+	else
+		ret_val := 0; 
 	end if;
 	return ret_val; 
 end function find_delay;
 
-
-constant DATA_DELAY		: integer:=find_delay(XSER, DTW, TFW);
+constant DATA_DELAY : integer:=find_delay(XSER, DTW, TFW);
 type std_logic_delayN is array (DATA_DELAY-1 downto 0) of std_logic_vector(DTW-1 downto 0);
 
 
@@ -165,14 +142,14 @@ begin
 	-------- SUM = (A + B), DIF = (A-B) --------
 	xADD_RE: entity work.int_addsub_dsp48
 		generic map (
-			DSPW	=> DTW,
+			DSPW	=> DTW-SCALE,
 			XSER 	=> XSER
 		)
 		port map (
-			IA_RE 	=> az_re,
-			IA_IM 	=> az_im,
-			IB_RE 	=> bw_re,
-			IB_IM 	=> bw_im,
+			IA_RE 	=> az_re(DTW-1 downto SCALE),
+			IA_IM 	=> az_im(DTW-1 downto SCALE),
+			IB_RE 	=> bw_re(DTW-1 downto SCALE),
+			IB_IM 	=> bw_im(DTW-1 downto SCALE),
 
 			OX_RE 	=> OA_RE,
 			OX_IM 	=> OA_IM,
@@ -255,10 +232,10 @@ begin
 	---------------------------------------------------------------
 	---- Others ----
 	xSTn: if (STAGE > 1) generate	
-		signal dz_re 		: std_logic_delayN;
-		signal dz_im 		: std_logic_delayN;
+		signal dz_re    : std_logic_delayN;
+		signal dz_im    : std_logic_delayN;
 
-		signal vl_zz 		: std_logic_vector(DATA_DELAY+ADD_DELAY-1 downto 0);
+		signal vl_zz    : std_logic_vector(DATA_DELAY+ADD_DELAY-1 downto 0);
 	begin
 		dz_re <= dz_re(DATA_DELAY-2 downto 0) &	IA_RE when rising_edge(clk);
 		dz_im <= dz_im(DATA_DELAY-2 downto 0) &	IA_IM when rising_edge(clk);

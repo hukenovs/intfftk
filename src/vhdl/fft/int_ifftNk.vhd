@@ -19,31 +19,35 @@
 --      OUT0 - 1st half part of data
 --      OUT1 - 2nd half part of data flow (length = NFFT)
 --		
---		Clock enable (Input data valid) must be strobe N = 2^(NFFT) cycles
----     w/o interruption!!!
+--    RAMB_TYPE:
+--        > CONT MODE: Clock enable (Input data valid) must be cont. strobe 
+--        N = 2^(NFFT) cycles w/o interruption!!!
+--        > WRAP MODE: Clock enable (Input data valid) can be wrapped
 --
---      Example: 
+--      Example Wrapped Mode: 
 --        Input data:   ________________________
 --        DI_EN     ___/                        \____
 --        DI_AA:        /0\/1\/2\/3\/4\/5\/6\/7\
 --        DI_BB:        \8/\9/\A/\B/\C/\D/\E/\F/
 -- 
+--    FORMAT: 1 - Unscaled, 0 - Scaled data output
+--
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 --
---	GNU GENERAL PUBLIC LICENSE
+--  GNU GENERAL PUBLIC LICENSE
 --  Version 3, 29 June 2007
---
---	Copyright (c) 2018 Kapitanov Alexander
---
+--  
+--  Copyright (c) 2018 Kapitanov Alexander
+--  
 --  This program is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation, either version 3 of the License, or
 --  (at your option) any later version.
---
+--  
 --  You should have received a copy of the GNU General Public License
 --  along with this program.  If not, see <http://www.gnu.org/licenses/>.
---
+--  
 --  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
 --  APPLICABLE LAW. EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT 
 --  HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY 
@@ -61,7 +65,8 @@ use ieee.std_logic_1164.all;
 entity int_ifftNk is
 	generic (
 		IS_SIM		: boolean:=FALSE;		--! Simulation model: TRUE / FALSE
-		NFFT		: integer:=5;			--! Number of FFT stages     		
+		NFFT		: integer:=5;			--! Number of FFT stages
+		FORMAT		: integer:=1;			--! 0 - Scaled, 1 - Unscaled mode	
 		RAMB_TYPE	: string:="WRAP";		--! Cross-commutation type: WRAP / CONT
 		DATA_WIDTH	: integer:=16;			--! Input data width
 		TWDL_WIDTH	: integer:=16;			--! Twiddle factor data width	
@@ -80,17 +85,26 @@ entity int_ifftNk is
 		DI_IM1		: in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Input data Odd Im
 		DI_ENA		: in  std_logic; --! Input valid data
 
-		DO_RE0		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Even Re
-		DO_IM0		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Even Im
-		DO_RE1		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Odd Re
-		DO_IM1		: out std_logic_vector(NFFT+DATA_WIDTH-1 downto 0); --! Output data Odd Im
+		DO_RE0		: out std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0); --! Output data Even Re
+		DO_IM0		: out std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0); --! Output data Even Im
+		DO_RE1		: out std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0); --! Output data Odd Re
+		DO_IM1		: out std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0); --! Output data Odd Im
 		DO_VAL		: out std_logic --! Output valid data
 	);
 end int_ifftNk;
 
 architecture int_ifftNk of int_ifftNk is	
 
-type complex_WxN is array (NFFT-1 downto 0) of std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+type complex_WxN is array (NFFT-1 downto 0) of std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+
+function scale_mode(dat: integer) return integer is
+	variable ret : integer:=0;
+begin
+	if (dat = 0) then ret := 1; else ret := 0; end if;
+	return ret; 
+end function;
+
+constant SCALE		: integer:=scale_mode(FORMAT);
 
 -------- Butterfly In / Out --------
 signal ia_re		: complex_WxN;
@@ -122,7 +136,7 @@ signal ss_en		: std_logic_vector(NFFT-1 downto 0);
 signal xx_vl		: std_logic_vector(NFFT-1 downto 0);
 
 -------- Delay data Cross-commutation --------
-type complex_DxN is array (NFFT-2 downto 0) of std_logic_vector(2*(NFFT+DATA_WIDTH)-1 downto 0);
+type complex_DxN is array (NFFT-2 downto 0) of std_logic_vector(FORMAT*2*NFFT+2*DATA_WIDTH-1 downto 0);
 
 signal di_aa 		: complex_DxN;
 signal di_bb 		: complex_DxN;  
@@ -141,35 +155,33 @@ signal ww_en		: std_logic_vector(NFFT-1 downto 0);
 begin
 
 ab_en(0) <= DI_ENA;
-ia_re(0)(DATA_WIDTH-1 downto 0) <= DI_RE0;
-ia_im(0)(DATA_WIDTH-1 downto 0) <= DI_IM0;
-ib_re(0)(DATA_WIDTH-1 downto 0) <= DI_RE1;
-ib_im(0)(DATA_WIDTH-1 downto 0) <= DI_IM1;
+ia_re(0) <= DI_RE0;
+ia_im(0) <= DI_IM0;
+ib_re(0) <= DI_RE1;
+ib_im(0) <= DI_IM1;
 
 xCALC: for ii in 0 to NFFT-1 generate
-
 begin
-
 	---- Butterflies ----
 	xBUTTERFLY: entity work.int_dit2_fly
 		generic map ( 
 			IS_SIM 	=> IS_SIM,
 			STAGE 	=> ii,
-			DTW 	=> DATA_WIDTH+ii,
+			DTW 	=> DATA_WIDTH+ii*FORMAT,
 			TFW 	=> TWDL_WIDTH,
 			XSER 	=> XSER
 		)
 		port map (
-			IA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii downto 0),
+			IA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			IA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			IB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			IB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			IN_EN	=> ss_en(ii),
 
-			OA_RE	=> oa_re(ii)(DATA_WIDTH+ii downto 0),
-			OA_IM	=> oa_im(ii)(DATA_WIDTH+ii downto 0),
-			OB_RE	=> ob_re(ii)(DATA_WIDTH+ii downto 0),
-			OB_IM	=> ob_im(ii)(DATA_WIDTH+ii downto 0),
+			OA_RE	=> oa_re(ii)(DATA_WIDTH+ii*FORMAT downto 0),
+			OA_IM	=> oa_im(ii)(DATA_WIDTH+ii*FORMAT downto 0),
+			OB_RE	=> ob_re(ii)(DATA_WIDTH+ii*FORMAT downto 0),
+			OB_IM	=> ob_im(ii)(DATA_WIDTH+ii*FORMAT downto 0),
 			DO_VL	=> ab_vl(ii),
 			
 			WW_RE	=> ww_re(ii),
@@ -200,21 +212,21 @@ begin
 	---- Aligne data for butterfly calc ----
 	xALIGNE: entity work.int_align_ifft 
 		generic map ( 		
-			DATW	=> DATA_WIDTH+ii,
+			DATW	=> DATA_WIDTH+ii*FORMAT,
 			NFFT	=> NFFT,
 			STAGE 	=> ii
 		)
 		port map (	
 			CLK		=> clk,
-			IA_RE	=> ia_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IA_IM	=> ia_im(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_RE	=> ib_re(ii)(DATA_WIDTH-1+ii downto 0),
-			IB_IM	=> ib_im(ii)(DATA_WIDTH-1+ii downto 0),
+			IA_RE	=> ia_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			IA_IM	=> ia_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			IB_RE	=> ib_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			IB_IM	=> ib_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			
-			OA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii downto 0),
-			OA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii downto 0),
-			OB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii downto 0),
-			OB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii downto 0),
+			OA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			OA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			OB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
+			OB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			
 			BF_EN	=> ab_en(ii),
 			BF_VL	=> ss_en(ii),
@@ -244,7 +256,7 @@ begin
 end generate;
 
 xDELAYS: for ii in 0 to NFFT-2 generate
-		constant DW : integer:=(DATA_WIDTH+ii)+1;
+		constant DW : integer:=(DATA_WIDTH+ii*FORMAT)+1;
 	begin
 	
 	di_aa(ii)(2*DW-1 downto 0) <= xa_im(ii)(DW-1 downto 0) & xa_re(ii)(DW-1 downto 0);	
