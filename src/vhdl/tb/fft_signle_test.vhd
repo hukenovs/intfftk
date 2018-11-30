@@ -20,6 +20,7 @@
 --		DT_RND		- (s) - Data output multiplexer for rounding			
 --		XSERIES		- (p) -	FPGA Series: ULTRASCALE / 7SERIES
 --		USE_MLT		- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
+--		FORMAT		- (p) -	1 - Use Unscaled mode / 0 - Scaled (truncate) mode
 --
 -- where: (p) - generic parameter, (s) - signal.
 --
@@ -54,7 +55,6 @@ library ieee;
 use ieee.std_logic_1164.all;  
 use ieee.std_logic_signed.all;
 use ieee.std_logic_arith.all;
-use ieee.math_real.all;
 
 use ieee.std_logic_textio.all;
 use std.textio.all;	
@@ -68,6 +68,7 @@ architecture fft_signle_test of fft_signle_test is
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
 constant	NFFT 		: integer:=10; -- Number of stages = log2(FFT LENGTH)
+constant	FORMAT 		: integer:=1;  -- 1 - Use Unscaled mode / 0 - Scaled (truncate) mode
 
 constant	DATA_WIDTH	: integer:=16; -- Data width for signal imitator	: 8-32.
 constant	TWDL_WIDTH	: integer:=16; -- Data width for twiddle factor 	: 16-24.
@@ -85,18 +86,14 @@ signal clk				: std_logic:='0';
 signal reset			: std_logic:='0';
 signal start			: std_logic:='0';
 
------------------------- In / Out data --------------------	
+---------------- In / Out data ----------------	
 signal di_re			: std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
 signal di_im			: std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
 signal di_en			: std_logic:='0';
 
-signal do_re			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
-signal do_im 			: std_logic_vector(NFFT+DATA_WIDTH-1 downto 0);
+signal do_re			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_im 			: std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 signal do_vl			: std_logic;
-
-signal sc_re			: std_logic_vector(DATA_WIDTH-1 downto 0);
-signal sc_im 			: std_logic_vector(DATA_WIDTH-1 downto 0);
-signal sc_vl			: std_logic;
 
 begin
 
@@ -104,7 +101,7 @@ clk <= not clk after 5 ns;
 reset <= '0', '1' after 30 ns;
 start <= '0', '1' after 100 ns;
 
--------------------------------------------------------------------------------- 
+---------------------------------------------------------------- 
 read_signal: process is
 	file fl_data		: text;
 	constant fl_path	: string:="../../../../../math/di_single.dat";
@@ -164,11 +161,12 @@ begin
 	end if;
 end process; 
 
---------------------------------------------------------------------------------
+------------------------------------------------
 UUT: entity work.int_fft_single_path
 	generic map (
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
+		FORMAT			=> FORMAT,	
 		XSERIES			=> XSERIES,	
 		NFFT			=> NFFT,	
 		USE_MLT			=> USE_MLT	
@@ -188,30 +186,6 @@ UUT: entity work.int_fft_single_path
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd
 	);
-
---------------------------------------------------------------------------------
-UUT_SC: entity work.int_fft_single_scaled
-	generic map (	
-		DATA_WIDTH		=> DATA_WIDTH,
-		TWDL_WIDTH		=> TWDL_WIDTH,
-		XSERIES			=> XSERIES,
-		NFFT			=> NFFT,
-		USE_MLT			=> USE_MLT
-	)   
-	port map ( 
-		---- Common signals ----
-		RESET			=> reset,
-		CLK				=> clk,	
-		---- Input data ----
-		DI_RE			=> di_re,
-		DI_IM			=> di_im,
-		DI_EN			=> di_en,
-		---- Output data ----
-		DO_RE			=> sc_re,
-		DO_IM			=> sc_im,
-		DO_VL			=> sc_vl,
-		---- Butterflies ----
-		FLY_FWD			=> fly_fwd
-	);
 	
+------------------------------------------------
 end fft_signle_test; 
