@@ -1,22 +1,22 @@
 // -------------------------------------------------------------------------------
 // --
-// -- Title       : int_dif2_fly
+// -- Title       : int_dit2_fly
 // -- Design      : FFT
 // -- Author      : Kapitanov Alexander
 // -- Company     :
 // -- E-mail      : sallador@bk.ru
 // --
-// -- Description : DIF butterfly (Radix-2)
+// -- Description : DIT butterfly (Radix-2)
 // --
 // -------------------------------------------------------------------------------
 // --
 // --    Version 1.0  29.11.2018
-// --    Description: Simple butterfly Radix-2 for FFT (DIF)
+// --    Description: Simple butterfly Radix-2 for FFT (DIT)
 // --
-// --    Algorithm: Decimation in frequency
+// --    Algorithm: Decimation in time
 // --
-// --    X = (A+B), 
-// --    Y = (A-B)*W;
+// --    X = A+B*W,
+// --    Y = A-B*W;
 // --
 // -------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------
@@ -46,7 +46,7 @@
 // -------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------
 
-module int_dif2_fly
+module int_dit2_fly
     #(
         parameter
         STAGE    = 3,    // --! Butterfly stages
@@ -67,7 +67,6 @@ module int_dif2_fly
     );
 
     // functions declaration //
-
     function integer find_delay;
         input sVAR;
         input integer iDW, iTW;
@@ -75,7 +74,6 @@ module int_dif2_fly
     begin
         loDSP = (sVAR == "OLD") ? 25 : 27;
         hiDSP = (sVAR == "OLD") ? 43 : 45;
-
         // ---- TWIDDLE WIDTH UP TO 18 ----
         if (iTW < 19) begin
             if (iDW <= loDSP)
@@ -99,27 +97,26 @@ module int_dif2_fly
     end
     endfunction
 
-
     localparam ADD_DELAY = (DTW < 48) ? 2 : 3;
 
-    wire [DTW-SCALE : 0] ad_re, ad_im, su_re, su_im;
+    reg [DTW-SCALE : 0] az_re, az_im, bw_re, bw_im;
 
     // ---------------------------------------------------------------
     // -------- SUM = (A + B), DIF = (A-B) --------
     int_addsub_dsp48 #(
-        .DSPW(DTW-SCALE),
+        .DSPW(DTW),
         .XSER(XSER)
     )
     xADD_RE (
-        .IA_RE(ia_re[DTW-1 : SCALE]),
-        .IA_IM(ia_im[DTW-1 : SCALE]),
-        .IB_RE(ib_re[DTW-1 : SCALE]),
-        .IB_IM(ib_im[DTW-1 : SCALE]),
+        .IA_RE(az_re),
+        .IA_IM(az_im),
+        .IB_RE(bw_re),
+        .IB_IM(bw_im),
 
-        .OX_RE(ad_re),
-        .OX_IM(ad_im),
-        .OY_RE(su_re),
-        .OY_IM(su_im),
+        .OX_RE(oa_re),
+        .OX_IM(oa_im),
+        .OY_RE(ob_re),
+        .OY_IM(ob_im),
 
         .RST(rst),
         .CLK(clk)
@@ -131,10 +128,10 @@ module int_dif2_fly
         if (STAGE == 0) begin : xST0
             reg [ADD_DELAY-1 : 0] vl_zz;
 
-            assign oa_re = ad_re;
-            assign oa_im = ad_im;
-            assign ob_re = su_re;
-            assign ob_im = su_im;
+            always @(*) bw_re <= ib_re;
+            always @(*) bw_im <= ib_im;
+            always @(*) az_re <= ia_re;
+            always @(*) az_im <= ia_im;
             assign do_vl = vl_zz[ADD_DELAY-1];
 
             always @(posedge clk) vl_zz <= {vl_zz[ADD_DELAY-2 : 0], in_en};
@@ -143,15 +140,13 @@ module int_dif2_fly
         end else if (STAGE == 1) begin : xST1
 
             reg [ADD_DELAY : 0] vl_zz;
-            reg dt_sw;
-
-            reg [DTW-SCALE : 0] az_re, az_im, sz_re, sz_im;
+            reg dt_sw; 
 
             // ---- Counter for twiddle factor ----
             always @(posedge clk) begin
-                if (rst) 
+                if (rst)
                     dt_sw <= 0;
-                else if (vl_zz[ADD_DELAY-1]) 
+                else if (in_en)
                     dt_sw <= ~dt_sw;
             end
 
@@ -167,35 +162,30 @@ module int_dif2_fly
             always @(posedge clk) begin
                 // ---- WW(0){Re,Im} = {1, 0} ----
                 if (dt_sw) begin
-                    sz_re <= su_re;
-                    sz_im <= su_im;
+                    bw_re <= ib_re;
+                    bw_im <= ib_im;
                 end else begin
-                    sz_re <= su_im;
-                    sz_im <= (su_re[DTW-SCALE]) ? (~su_re) : ((~su_re) + 1'b1);
+                    bw_im <= ib_re;
+                    bw_re <= (ib_im[DTW-1]) ? (~ib_im) : ((~ib_im) + 1'b1);
                 end
             end
 
             always @(posedge clk) vl_zz <= {vl_zz[ADD_DELAY-1 : 0], in_en};
 
             always @(posedge clk) begin
-                az_re <= ad_re;
-                az_im <= ad_im;
+                az_re <= ia_re;
+                az_im <= ia_im;
             end
 
-            assign oa_re = az_re;
-            assign oa_im = az_im;
-            assign ob_re = sz_re;
-            assign ob_im = sz_im;
             assign do_vl = vl_zz[ADD_DELAY];
 
         // ---- Others ----
         end else if (STAGE > 1) begin : xSTn
 
             localparam DATA_DELAY = find_delay(XSER, DTW+1-SCALE, TFW);
-            wire [DTW-SCALE : 0] db_re, db_im;
 
-            reg [DTW-SCALE : 0] az_re [0 : DATA_DELAY-1];
-            reg [DTW-SCALE : 0] az_im [0 : DATA_DELAY-1];
+            reg [DTW-SCALE : 0] dz_re [0 : DATA_DELAY-1];
+            reg [DTW-SCALE : 0] dz_im [0 : DATA_DELAY-1];
             reg [DATA_DELAY+ADD_DELAY-1 : 0] vl_zz;
             
             always @(posedge clk) vl_zz <= {vl_zz[DATA_DELAY+ADD_DELAY-2 : 0], in_en};
@@ -203,11 +193,11 @@ module int_dif2_fly
             integer i;
             always @ (posedge clk) begin
                 for (i = 1; i < DATA_DELAY; i = i + 1) begin
-                    az_re[i] <= az_re[i-1];
-                    az_im[i] <= az_im[i-1];
+                    dz_re[i] <= dz_re[i-1];
+                    dz_im[i] <= dz_im[i-1];
                 end
-                az_re[0] <= ad_re;
-                az_im[0] <= ad_im;
+                dz_re[0] <= ia_re;
+                dz_im[0] <= ia_im;
             end
 
             // -------- PROD = DIF * WW --------    
@@ -217,22 +207,18 @@ module int_dif2_fly
                 .XSER(XSER)
             )
             xCMPL (
-                .DI_RE(su_re),
-                .DI_IM(su_im),
+                .DI_RE(ib_re),
+                .DI_IM(ib_im),
                 .WW_RE(ww_re),
                 .WW_IM(ww_im),
 
-                .DO_RE(db_re),
-                .DO_IM(db_im),
+                .DO_RE(bw_im),
+                .DO_IM(bw_re),
 
                 .RST(rst),
                 .CLK(clk)
             );    
 
-            assign oa_re = az_re[DATA_DELAY-1];
-            assign oa_im = az_im[DATA_DELAY-1];
-            assign ob_re = db_re;
-            assign ob_im = db_im;
             assign do_vl = vl_zz[DATA_DELAY+ADD_DELAY-1];
         end
     endgenerate
