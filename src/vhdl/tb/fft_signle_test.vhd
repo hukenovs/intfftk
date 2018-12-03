@@ -162,30 +162,92 @@ begin
 end process; 
 
 ------------------------------------------------
-UUT: entity work.int_fft_single_path
+-- UUT: entity work.int_fft_single_path
+	-- generic map (
+		-- DATA_WIDTH		=> DATA_WIDTH,
+		-- TWDL_WIDTH		=> TWDL_WIDTH,	
+		-- FORMAT			=> FORMAT,
+		-- XSERIES			=> XSERIES,
+		-- NFFT			=> NFFT,
+		-- USE_MLT			=> USE_MLT	
+	-- )   
+	-- port map ( 
+		-- ---- Common signals ----
+		-- RESET			=> reset,	
+		-- CLK				=> clk,	
+		-- ---- Input data ----
+		-- DI_RE			=> di_re,
+		-- DI_IM			=> di_im,
+		-- DI_EN			=> di_en,
+		-- ---- Output data ----
+		-- DO_RE			=> do_re,
+		-- DO_IM			=> do_im,
+		-- DO_VL			=> do_vl,
+		-- ---- Butterflies ----
+		-- FLY_FWD			=> fly_fwd
+	-- );
+	
+xUUT: if (NFFT > 0) generate
+
+	signal sc_re			: std_logic_vector(0*NFFT+DATA_WIDTH-1 downto 0);
+	signal sc_im 			: std_logic_vector(0*NFFT+DATA_WIDTH-1 downto 0);
+	signal sc_vl			: std_logic;
+
+	signal un_re			: std_logic_vector(1*NFFT+DATA_WIDTH-1 downto 0);
+	signal un_im 			: std_logic_vector(1*NFFT+DATA_WIDTH-1 downto 0);
+	signal un_vl			: std_logic;
+
+begin
+	
+UUT_UNSCALED: entity work.int_fft_single_path
 	generic map (
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
-		FORMAT			=> FORMAT,	
+		FORMAT			=> 1,	
 		XSERIES			=> XSERIES,	
 		NFFT			=> NFFT,	
 		USE_MLT			=> USE_MLT	
 	)   
 	port map ( 
 		---- Common signals ----
-		RESET			=> reset,	
+		RESET			=> reset,
 		CLK				=> clk,	
 		---- Input data ----
 		DI_RE			=> di_re,
 		DI_IM			=> di_im,
 		DI_EN			=> di_en,
 		---- Output data ----
-		DO_RE			=> do_re,
-		DO_IM			=> do_im,
-		DO_VL			=> do_vl,
+		DO_RE			=> un_re,
+		DO_IM			=> un_im,
+		DO_VL			=> un_vl,
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd
-	);
+	);	
 	
+UUT_SCALED: entity work.int_fft_single_path
+	generic map (
+		DATA_WIDTH		=> DATA_WIDTH,
+		TWDL_WIDTH		=> TWDL_WIDTH,	
+		FORMAT			=> 0,	
+		XSERIES			=> XSERIES,	
+		NFFT			=> NFFT,	
+		USE_MLT			=> USE_MLT	
+	)   
+	port map ( 
+		---- Common signals ----
+		RESET			=> reset,
+		CLK				=> clk,	
+		---- Input data ----
+		DI_RE			=> di_re,
+		DI_IM			=> di_im,
+		DI_EN			=> di_en,
+		---- Output data ----
+		DO_RE			=> sc_re,
+		DO_IM			=> sc_im,
+		DO_VL			=> sc_vl,
+		---- Butterflies ----
+		FLY_FWD			=> fly_fwd
+	);		
+end generate;	
 ------------------------------------------------
 end fft_signle_test; 

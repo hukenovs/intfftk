@@ -230,11 +230,16 @@ xFFT: entity work.int_fftNk
 	);
 
 ------------------ FFTK_N (FORWARD FFT) --------------------
-fi_re0 <= do_re0 when rising_edge(clk);
-fi_im0 <= do_im0 when rising_edge(clk);
-fi_re1 <= do_re1 when rising_edge(clk);
-fi_im1 <= do_im1 when rising_edge(clk);
-fi_ena <= do_val when rising_edge(clk);
+pr_clk: process(clk) is
+begin
+	if rising_edge(clk) then
+		fi_re0 <= do_re0;
+		fi_im0 <= do_im0;
+		fi_re1 <= do_re1;
+		fi_im1 <= do_im1;
+		fi_ena <= do_val;
+	end if;
+end process;
 
 xIFFT: entity work.int_ifftNk
 	generic map (

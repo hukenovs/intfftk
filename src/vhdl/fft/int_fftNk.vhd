@@ -107,41 +107,41 @@ end function;
 constant SCALE		: integer:=scale_mode(FORMAT);
 
 -------- Butterfly In / Out --------
-signal ia_re		: complex_WxN;
-signal ia_im		: complex_WxN;
-signal ib_re		: complex_WxN;
-signal ib_im		: complex_WxN;
+signal ia_re		: complex_WxN := (others => (others => '0'));
+signal ia_im		: complex_WxN := (others => (others => '0'));
+signal ib_re		: complex_WxN := (others => (others => '0'));
+signal ib_im		: complex_WxN := (others => (others => '0'));
 
-signal oa_re		: complex_WxN;
-signal oa_im		: complex_WxN;
-signal ob_re		: complex_WxN;
-signal ob_im		: complex_WxN;
+signal oa_re		: complex_WxN := (others => (others => '0'));
+signal oa_im		: complex_WxN := (others => (others => '0'));
+signal ob_re		: complex_WxN := (others => (others => '0'));
+signal ob_im		: complex_WxN := (others => (others => '0'));
 
 -------- Align data --------
-signal sa_re		: complex_WxN;
-signal sa_im		: complex_WxN;
-signal sb_re		: complex_WxN;
-signal sb_im		: complex_WxN;
+signal sa_re		: complex_WxN := (others => (others => '0'));
+signal sa_im		: complex_WxN := (others => (others => '0'));
+signal sb_re		: complex_WxN := (others => (others => '0'));
+signal sb_im		: complex_WxN := (others => (others => '0'));
 
 -------- Mux'ed data flow (fly_ena) --------
-signal xa_re		: complex_WxN;
-signal xa_im		: complex_WxN;
-signal xb_re		: complex_WxN;
-signal xb_im		: complex_WxN;
+signal xa_re		: complex_WxN := (others => (others => '0'));
+signal xa_im		: complex_WxN := (others => (others => '0'));
+signal xb_re		: complex_WxN := (others => (others => '0'));
+signal xb_im		: complex_WxN := (others => (others => '0'));
 
 -------- Enables --------
-signal ab_en		: std_logic_vector(NFFT-1 downto 0);
-signal ab_vl		: std_logic_vector(NFFT-1 downto 0);
-signal ss_en		: std_logic_vector(NFFT-1 downto 0);
-signal xx_vl		: std_logic_vector(NFFT-1 downto 0);
+signal ab_en		: std_logic_vector(NFFT-1 downto 0) := (others => '0');
+signal ab_vl		: std_logic_vector(NFFT-1 downto 0) := (others => '0');
+signal ss_en		: std_logic_vector(NFFT-1 downto 0) := (others => '0');
+signal xx_vl		: std_logic_vector(NFFT-1 downto 0) := (others => '0');
 
 -------- Delay data Cross-commutation --------
 type complex_DxN is array (NFFT-2 downto 0) of std_logic_vector(FORMAT*2*NFFT+2*DATA_WIDTH-1 downto 0);
 
-signal di_aa 		: complex_DxN;
-signal di_bb 		: complex_DxN;  
-signal do_aa 		: complex_DxN;
-signal do_bb 		: complex_DxN;
+signal di_aa 		: complex_DxN := (others => (others => '0'));
+signal di_bb 		: complex_DxN := (others => (others => '0'));  
+signal do_aa 		: complex_DxN := (others => (others => '0'));
+signal do_bb 		: complex_DxN := (others => (others => '0'));
 
 signal di_en		: std_logic_vector(NFFT-2 downto 0);
 signal do_en		: std_logic_vector(NFFT-2 downto 0);
@@ -155,10 +155,10 @@ signal ww_en		: std_logic_vector(NFFT-1 downto 0);
 begin
 
 ab_en(0) <= DI_ENA;		 
-ia_re(0) <= DI_RE0;
-ia_im(0) <= DI_IM0;
-ib_re(0) <= DI_RE1;
-ib_im(0) <= DI_IM1;
+ia_re(0)(DATA_WIDTH-1 downto 0) <= DI_RE0;
+ia_im(0)(DATA_WIDTH-1 downto 0) <= DI_IM0;
+ib_re(0)(DATA_WIDTH-1 downto 0) <= DI_RE1;
+ib_im(0)(DATA_WIDTH-1 downto 0) <= DI_IM1;
 
 xCALC: for ii in 0 to NFFT-1 generate
 begin
@@ -179,10 +179,10 @@ begin
 			IB_IM	=> sb_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			IN_EN	=> ss_en(ii),
 
-			OA_RE	=> oa_re(ii)(DATA_WIDTH+ii*FORMAT downto 0),
-			OA_IM	=> oa_im(ii)(DATA_WIDTH+ii*FORMAT downto 0),
-			OB_RE	=> ob_re(ii)(DATA_WIDTH+ii*FORMAT downto 0),
-			OB_IM	=> ob_im(ii)(DATA_WIDTH+ii*FORMAT downto 0),
+			OA_RE	=> oa_re(ii)(DATA_WIDTH-1+(ii+1)*FORMAT downto 0),
+			OA_IM	=> oa_im(ii)(DATA_WIDTH-1+(ii+1)*FORMAT downto 0),
+			OB_RE	=> ob_re(ii)(DATA_WIDTH-1+(ii+1)*FORMAT downto 0),
+			OB_IM	=> ob_im(ii)(DATA_WIDTH-1+(ii+1)*FORMAT downto 0),
 			DO_VL	=> ab_vl(ii),
 			
 			WW_RE	=> ww_re(ii),
@@ -208,7 +208,7 @@ begin
 			WW_EN 	=> ww_en(ii),
 			WW_RE	=> ww_re(ii),
 			WW_IM	=> ww_im(ii)
-		);			
+		);
 
 	---- Aligne data for butterfly calc ----
 	xALIGNE: entity work.int_align_fft 
@@ -217,13 +217,13 @@ begin
 			NFFT	=> NFFT,
 			STAGE 	=> NFFT-ii-1
 		)
-		port map (	
+		port map (
 			CLK		=> clk,
 			IA_RE	=> ia_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			IA_IM	=> ia_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			IB_RE	=> ib_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			IB_IM	=> ib_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
-			
+
 			OA_RE	=> sa_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			OA_IM	=> sa_im(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
 			OB_RE	=> sb_re(ii)(DATA_WIDTH-1+ii*FORMAT downto 0),
@@ -257,7 +257,7 @@ begin
 end generate;
 
 xDELAYS: for ii in 0 to NFFT-2 generate
-		constant DW : integer:=(DATA_WIDTH+ii*FORMAT)+1;
+		constant DW : integer:=(DATA_WIDTH+(ii+1)*FORMAT);
 	begin
 	
 	di_aa(ii)(2*DW-1 downto 0) <= xa_im(ii)(DW-1 downto 0) & xa_re(ii)(DW-1 downto 0);	

@@ -215,7 +215,7 @@ begin
 				---- WW(1){Re,Im} = {0, 1} ----
 				else
 					sz_re <= su_im;
-					if (su_re(DTW) = '0') then ---- ???
+					if (su_re(DTW-SCALE) = '0') then ---- ???
 						sz_im <= not(su_re) + '1';
 					else
 						sz_im <= not(su_re);

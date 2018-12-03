@@ -229,8 +229,8 @@ xOUT_BUF : entity work.outbuf_half_path
 		do_en		=> dx_en	
 	);
 
-dx_re(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*NFFT+DATA_WIDTH));
-dx_im(NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*NFFT+DATA_WIDTH));
+dx_re(FORMAT*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*NFFT+DATA_WIDTH));
+dx_im(FORMAT*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*NFFT+DATA_WIDTH));
 
 -------------------- BIT REVERSE ORDER --------------------
 xBITREV_RE : entity work.int_bitrev_ord
