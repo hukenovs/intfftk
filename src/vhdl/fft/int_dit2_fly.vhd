@@ -57,6 +57,7 @@ entity int_dit2_fly is
 		SCALE		: integer:=0;  --! 1 - Scaled FFT, 0 - Unscaled
 		DTW			: integer:=16; --! Data width
 		TFW			: integer:=16; --! Twiddle factor width
+		RNDMODE		: integer:=0; --! Rounding mode: TRUNC - 0 / ROUND - 1		
 		XSER 		: string:="OLD" --! Xilinx series: NEW - DSP48E2, OLD - DSP48E1
 	);
 	port(
@@ -69,10 +70,10 @@ entity int_dit2_fly is
 		WW_RE 		: in  std_logic_vector(TFW-1 downto 0); --! Re twiddle factor
 		WW_IM 		: in  std_logic_vector(TFW-1 downto 0); --! Im twiddle factor
 		
-		OA_RE 		: out std_logic_vector(DTW downto 0); --! Re even output data
-		OA_IM 		: out std_logic_vector(DTW downto 0); --! Im even output data
-		OB_RE 		: out std_logic_vector(DTW downto 0); --! Re odd  output data
-		OB_IM 		: out std_logic_vector(DTW downto 0); --! Im odd  output data
+		OA_RE 		: out std_logic_vector(DTW-SCALE downto 0); --! Re even output data
+		OA_IM 		: out std_logic_vector(DTW-SCALE downto 0); --! Im even output data
+		OB_RE 		: out std_logic_vector(DTW-SCALE downto 0); --! Re odd  output data
+		OB_IM 		: out std_logic_vector(DTW-SCALE downto 0); --! Im odd  output data
 		DO_VL		: out std_logic;	--! Output data valid			
 		
 		RST  		: in  std_logic;	--! Global Reset
@@ -129,36 +130,92 @@ begin
 	return ret_val; 
 end function addsub_delay;
 
-constant ADD_DELAY	: integer:=addsub_delay(DTW);
+constant ADD_DELAY	: integer:=addsub_delay(DTW+SCALE+RNDMODE)+RNDMODE;
 
 signal az_re 		: std_logic_vector(DTW-1 downto 0);
 signal az_im 		: std_logic_vector(DTW-1 downto 0);
 signal bw_re 		: std_logic_vector(DTW-1 downto 0);
 signal bw_im 		: std_logic_vector(DTW-1 downto 0);
 
-
 begin
 	---------------------------------------------------------------
 	-------- SUM = (A + B), DIF = (A-B) --------
-	xADD_RE: entity work.int_addsub_dsp48
-		generic map (
-			DSPW	=> DTW-SCALE,
-			XSER 	=> XSER
-		)
-		port map (
-			IA_RE 	=> az_re(DTW-1 downto SCALE),
-			IA_IM 	=> az_im(DTW-1 downto SCALE),
-			IB_RE 	=> bw_re(DTW-1 downto SCALE),
-			IB_IM 	=> bw_im(DTW-1 downto SCALE),
+	xUNSCALED: if ((SCALE = 0) or (RNDMODE = 0)) generate	
+		xADD_RE: entity work.int_addsub_dsp48
+			generic map (
+				DSPW	=> DTW-SCALE,
+				XSER 	=> XSER
+			)
+			port map (
+				IA_RE 	=> az_re(DTW-1 downto SCALE),
+				IA_IM 	=> az_im(DTW-1 downto SCALE),
+				IB_RE 	=> bw_re(DTW-1 downto SCALE),
+				IB_IM 	=> bw_im(DTW-1 downto SCALE),
 
-			OX_RE 	=> OA_RE,
-			OX_IM 	=> OA_IM,
-			OY_RE 	=> OB_RE,
-			OY_IM 	=> OB_IM,
+				OX_RE 	=> OA_RE,
+				OX_IM 	=> OA_IM,
+				OY_RE 	=> OB_RE,
+				OY_IM 	=> OB_IM,
 
-			RST  	=> rst,
-			CLK 	=> clk
-		);
+				RST  	=> rst,
+				CLK 	=> clk
+			);	
+	end generate;
+	---------------- ROUNDING MODE ----------------
+	xROUND: if ((RNDMODE = 1) and (SCALE = 1)) generate
+		signal da_re 		: std_logic_vector(DTW downto 0);
+		signal da_im 		: std_logic_vector(DTW downto 0);
+		signal db_re 		: std_logic_vector(DTW downto 0);
+		signal db_im 		: std_logic_vector(DTW downto 0);
+	begin
+
+		xADD_RE: entity work.int_addsub_dsp48
+				generic map (
+					DSPW	=> DTW,
+					XSER 	=> XSER
+				)
+				port map (
+					IA_RE 	=> az_re,
+					IA_IM 	=> az_im,
+					IB_RE 	=> bw_re,
+					IB_IM 	=> bw_im,
+
+					OX_RE 	=> da_re,
+					OX_IM 	=> da_im,
+					OY_RE 	=> db_re,
+					OY_IM 	=> db_im,
+
+					RST  	=> rst,
+					CLK 	=> clk
+				);
+				
+		---- Rounding mode: +/- 0.5 ----	
+		pr_rnd: process(clk) is
+		begin
+			if rising_edge(clk) then
+				if (da_re(0) = '0') then
+					OA_RE <= da_re(DTW downto 1);
+				else
+					OA_RE <= da_re(DTW downto 1) + '1';
+				end if;
+				if (da_im(0) = '0') then
+					OA_IM <= da_im(DTW downto 1);
+				else
+					OA_IM <= da_im(DTW downto 1) + '1';
+				end if;	
+				if (db_re(0) = '0') then
+					OB_RE <= db_re(DTW downto 1);
+				else
+					OB_RE <= db_re(DTW downto 1) + '1';
+				end if;
+				if (db_im(0) = '0') then
+					OB_IM <= db_im(DTW downto 1);
+				else
+					OB_IM <= db_im(DTW downto 1) + '1';
+				end if;	
+			end if;
+		end process;		
+	end generate;
 	---------------------------------------------------------------
 	
 	---- First butterfly: don't need multipliers! WW0 = {1, 0} ----

@@ -25,6 +25,7 @@
 --
 --		USE_MLT			- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
 --		FORMAT			- (p) -	1 - Use Unscaled mode / 0 - Scaled (truncate) mode
+--		RNDMODE     	- (p) - 1 - Rounding (round), 0 - Truncate (floor)
 --
 -- where: (p) - generic parameter, (s) -  input signal.
 --
@@ -204,6 +205,7 @@ xFFT: entity work.int_fftNk
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
 		FORMAT		=> FORMAT,
+		RNDMODE		=> RNDMODE,
 		RAMB_TYPE	=> RAMB_TYPE,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
@@ -246,6 +248,7 @@ xIFFT: entity work.int_ifftNk
 		IS_SIM		=> FALSE,
 		NFFT		=> NFFT,
 		FORMAT		=> FORMAT,		
+		RNDMODE		=> RNDMODE,		
 		RAMB_TYPE	=> RAMB_TYPE,		
 		DATA_WIDTH	=> DATA_WIDTH+NFFT,
 		TWDL_WIDTH	=> TWDL_WIDTH,

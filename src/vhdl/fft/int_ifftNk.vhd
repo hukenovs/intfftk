@@ -31,6 +31,7 @@
 --        DI_BB:        \8/\9/\A/\B/\C/\D/\E/\F/
 -- 
 --    FORMAT: 1 - Unscaled, 0 - Scaled data output
+--    RNDMODE : 1 - Rounding (round), 0 - Truncate (floor)
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -67,6 +68,7 @@ entity int_ifftNk is
 		IS_SIM		: boolean:=FALSE;		--! Simulation model: TRUE / FALSE
 		NFFT		: integer:=5;			--! Number of FFT stages
 		FORMAT		: integer:=1;			--! 0 - Scaled, 1 - Unscaled mode	
+		RNDMODE		: integer:=0;			--! Rounding mode: TRUNCATE - 0 / ROUNDING - 1
 		RAMB_TYPE	: string:="WRAP";		--! Cross-commutation type: WRAP / CONT
 		DATA_WIDTH	: integer:=16;			--! Input data width
 		TWDL_WIDTH	: integer:=16;			--! Twiddle factor data width	
@@ -167,6 +169,8 @@ begin
 		generic map ( 
 			IS_SIM 	=> IS_SIM,
 			STAGE 	=> ii,
+			SCALE   => SCALE,
+			RNDMODE => RNDMODE,			
 			DTW 	=> DATA_WIDTH+ii*FORMAT,
 			TFW 	=> TWDL_WIDTH,
 			XSER 	=> XSER
