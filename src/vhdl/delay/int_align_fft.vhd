@@ -42,8 +42,9 @@ use ieee.std_logic_1164.all;
 
 entity int_align_fft is 
 	generic ( 
+		RNDMODE		: integer:=0;   --! Rounding mode: TRUNCATE - 0 / ROUNDING - 1
 		DATW		: integer:=16;	--! Data width
-		NFFT		: integer:=16;	--! FFT lenght
+		NFFT		: integer:=16;	--! FFT lenght		
 		STAGE 		: integer:=0	--! FFT stage			
 	);
 	port (	

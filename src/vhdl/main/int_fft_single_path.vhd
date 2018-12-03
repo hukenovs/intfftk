@@ -20,8 +20,15 @@
 --		XSERIES			- (p) -	FPGA Series: ULTRASCALE / 7SERIES
 --		USE_MLT			- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
 --		FORMAT			- (p) -	1 - Use Unscaled mode / 0 - Scaled (truncate) mode
+--		RNDMODE			- (p) - 1 - Rounding (round), 0 - Truncate (floor)
 --
 -- where: (p) - generic parameter, (s) - signal.
+--
+-------------------------------------------------------------------------------
+--
+--  Notes: 
+--	  Date: 03.12.2018. 
+--    Rounding mode should be tested on DW > 48! see int_dif2_fly.vhd
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -61,6 +68,7 @@ entity int_fft_single_path is
 		DATA_WIDTH		: integer:=16;			--! Data input width (8-32)
 		TWDL_WIDTH		: integer:=16; 			--! Data width for twiddle factor
 		FORMAT			: integer:=1;			--! 1 - unscaled, 0 - scaled mode for output data
+		RNDMODE			: integer:=0;			--! Rounding mode: TRUNCATE - 0 / ROUNDING - 1
 		XSERIES			: string:="NEW";		--! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
 		USE_MLT			: boolean:=FALSE 		--! Use Multiplier for calculation M_PI in Twiddle factor
 	);														  
@@ -163,6 +171,7 @@ xFFT: entity work.int_fftNk
 		NFFT		=> NFFT,
 		RAMB_TYPE	=> "CONT",
 		FORMAT		=> FORMAT,
+		RNDMODE		=> RNDMODE,
 		DATA_WIDTH	=> DATA_WIDTH,
 		TWDL_WIDTH	=> TWDL_WIDTH,
 		XSER		=> XSERIES,

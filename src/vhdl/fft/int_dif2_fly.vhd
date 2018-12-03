@@ -57,6 +57,8 @@ entity int_dif2_fly is
 		SCALE		: integer:=0;  --! 1 - Scaled FFT, 0 - Unscaled
 		DTW			: integer:=16; --! Data width
 		TFW			: integer:=16; --! Twiddle factor width
+		-- RNDMODE		: string:="TRUNC"; --! Rounding mode: TRUNC - truncate / ROUND - rounding
+		RNDMODE		: integer:=0; --! Rounding mode: TRUNC - 0 / ROUND - 1
 		XSER 		: string:="OLD" --! Xilinx series: NEW - DSP48E2, OLD - DSP48E1
 	);
 	port(
@@ -126,10 +128,10 @@ begin
 	else 
 		ret_val := 3;
 	end if;
-	return ret_val; 
+	return ret_val;
 end function addsub_delay;
 
-constant ADD_DELAY	: integer:=addsub_delay(DTW);
+constant ADD_DELAY	: integer:=addsub_delay(DTW+SCALE+RNDMODE)+RNDMODE;
 
 signal ad_re 		: std_logic_vector(DTW-SCALE downto 0);
 signal ad_im 		: std_logic_vector(DTW-SCALE downto 0);
@@ -139,25 +141,105 @@ signal su_im 		: std_logic_vector(DTW-SCALE downto 0);
 begin
 	---------------------------------------------------------------
 	-------- SUM = (A + B), DIF = (A-B) --------
-	xADD_RE: entity work.int_addsub_dsp48
-		generic map (
-			DSPW	=> DTW-SCALE,
-			XSER 	=> XSER
-		)
-		port map (
-			IA_RE 	=> ia_re(DTW-1 downto SCALE),
-			IA_IM 	=> ia_im(DTW-1 downto SCALE),
-			IB_RE 	=> ib_re(DTW-1 downto SCALE),
-			IB_IM 	=> ib_im(DTW-1 downto SCALE),
+	-- xTRUNC: if ((RNDMODE = "TRUNC") and (SCALE = 1)) generate
+	xTRUNC: if ((RNDMODE = 0) and (SCALE = 1)) generate
+		xADD_RE: entity work.int_addsub_dsp48
+			generic map (
+				DSPW	=> DTW-1,
+				XSER 	=> XSER
+			)
+			port map (
+				IA_RE 	=> ia_re(DTW-1 downto 1),
+				IA_IM 	=> ia_im(DTW-1 downto 1),
+				IB_RE 	=> ib_re(DTW-1 downto 1),
+				IB_IM 	=> ib_im(DTW-1 downto 1),
 
-			OX_RE 	=> ad_re,
-			OX_IM 	=> ad_im,
-			OY_RE 	=> su_re,
-			OY_IM 	=> su_im,
+				OX_RE 	=> ad_re,
+				OX_IM 	=> ad_im,
+				OY_RE 	=> su_re,
+				OY_IM 	=> su_im,
 
-			RST  	=> rst,
-			CLK 	=> clk
-		);
+				RST  	=> rst,
+				CLK 	=> clk
+			);
+	end generate;
+	
+	-- xROUND: if ((RNDMODE = "ROUND") and (SCALE = 1)) generate
+	xROUND: if ((RNDMODE = 1) and (SCALE = 1)) generate
+		signal rnd_ia_re : std_logic_vector(DTW downto 0);
+		signal rnd_ia_im : std_logic_vector(DTW downto 0);
+		signal rnd_ib_re : std_logic_vector(DTW downto 0);
+		signal rnd_ib_im : std_logic_vector(DTW downto 0);
+	begin
+		xADD_RE: entity work.int_addsub_dsp48
+			generic map (
+				DSPW	=> DTW,
+				XSER 	=> XSER
+			)
+			port map (
+				IA_RE 	=> ia_re,
+				IA_IM 	=> ia_im,
+				IB_RE 	=> ib_re,
+				IB_IM 	=> ib_im,
+
+				OX_RE 	=> rnd_ia_re,
+				OX_IM 	=> rnd_ia_im,
+				OY_RE 	=> rnd_ib_re,
+				OY_IM 	=> rnd_ib_im,
+
+				RST  	=> rst,
+				CLK 	=> clk
+			);
+			
+		---- Rounding mode: +/- 0.5 ----	
+		pr_rnd: process(clk) is
+		begin
+			if rising_edge(clk) then
+				if (rnd_ia_re(0) = '0') then
+					ad_re <= rnd_ia_re(DTW downto 1);
+				else
+					ad_re <= rnd_ia_re(DTW downto 1) + '1';
+				end if;
+				if (rnd_ia_im(0) = '0') then
+					ad_im <= rnd_ia_im(DTW downto 1);
+				else
+					ad_im <= rnd_ia_im(DTW downto 1) + '1';
+				end if;	
+				if (rnd_ib_re(0) = '0') then
+					su_re <= rnd_ib_re(DTW downto 1);
+				else
+					su_re <= rnd_ib_re(DTW downto 1) + '1';
+				end if;
+				if (rnd_ib_im(0) = '0') then
+					su_im <= rnd_ib_im(DTW downto 1);
+				else
+					su_im <= rnd_ib_im(DTW downto 1) + '1';
+				end if;	
+			end if;
+		end process;
+	end generate;
+	
+	xUNSCALED: if (SCALE = 0) generate
+		xADD_RE: entity work.int_addsub_dsp48
+			generic map (
+				DSPW	=> DTW,
+				XSER 	=> XSER
+			)
+			port map (
+				IA_RE 	=> ia_re,
+				IA_IM 	=> ia_im,
+				IB_RE 	=> ib_re,
+				IB_IM 	=> ib_im,
+
+				OX_RE 	=> ad_re,
+				OX_IM 	=> ad_im,
+				OY_RE 	=> su_re,
+				OY_IM 	=> su_im,
+
+				RST  	=> rst,
+				CLK 	=> clk
+			);
+	end generate;	
 	---------------------------------------------------------------
 	
 	---- First butterfly: don't need multipliers! WW0 = {1, 0} ----
@@ -239,6 +321,9 @@ begin
 	---------------------------------------------------------------
 	---- Others ----
 	xSTn: if (STAGE > 1) generate	
+		signal wz_re 		: std_logic_vector(TFW-1 downto 0);		
+		signal wz_im 		: std_logic_vector(TFW-1 downto 0);
+		
 		signal db_re 		: std_logic_vector(DTW-SCALE downto 0);
 		signal db_im 		: std_logic_vector(DTW-SCALE downto 0);
 
@@ -251,7 +336,16 @@ begin
 		az_im <= az_im(DATA_DELAY-2 downto 0) &	AD_IM when rising_edge(clk);
 		vl_zz <= vl_zz(vl_zz'left-1 downto 0) & IN_EN when rising_edge(clk);
 
-	-------- PROD = DIF * WW --------	
+	-------- PROD = DIF * WW --------
+	xWWz: if (RNDMODE = 1) generate
+		wz_re <= ww_re when rising_edge(clk);
+		wz_im <= ww_im when rising_edge(clk);
+	end generate;
+	xWWx: if ((RNDMODE = 0) or (SCALE = 0)) generate
+		wz_re <= ww_re;
+		wz_im <= ww_im;
+	end generate;	
+	
 	xCMPL: entity work.int_cmult_dsp48
 		generic map (
 			IS_SIM	=> IS_SIM,	
@@ -262,8 +356,8 @@ begin
 		port map (
 			DI_RE 	=> su_re,
 			DI_IM 	=> su_im,
-			WW_RE 	=> ww_re,
-			WW_IM 	=> ww_im,
+			WW_RE 	=> wz_re,
+			WW_IM 	=> wz_im,
 
 			DO_RE 	=> db_re,
 			DO_IM 	=> db_im,

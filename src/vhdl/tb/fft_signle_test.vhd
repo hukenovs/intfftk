@@ -21,6 +21,7 @@
 --		XSERIES		- (p) -	FPGA Series: ULTRASCALE / 7SERIES
 --		USE_MLT		- (p) -	Use Multiplier for calculation M_PI in Twiddle factor
 --		FORMAT		- (p) -	1 - Use Unscaled mode / 0 - Scaled (truncate) mode
+--		RNDMODE     - (p) - 1 - Rounding (round), 0 - Truncate (floor)
 --
 -- where: (p) - generic parameter, (s) - signal.
 --
@@ -167,6 +168,7 @@ end process;
 		-- DATA_WIDTH		=> DATA_WIDTH,
 		-- TWDL_WIDTH		=> TWDL_WIDTH,	
 		-- FORMAT			=> FORMAT,
+		-- RNDMODE			=> RNDMODE,
 		-- XSERIES			=> XSERIES,
 		-- NFFT			=> NFFT,
 		-- USE_MLT			=> USE_MLT	
@@ -196,6 +198,10 @@ xUUT: if (NFFT > 0) generate
 	signal un_re			: std_logic_vector(1*NFFT+DATA_WIDTH-1 downto 0);
 	signal un_im 			: std_logic_vector(1*NFFT+DATA_WIDTH-1 downto 0);
 	signal un_vl			: std_logic;
+	
+	signal rn_re			: std_logic_vector(0*NFFT+DATA_WIDTH-1 downto 0);
+	signal rn_im 			: std_logic_vector(0*NFFT+DATA_WIDTH-1 downto 0);
+	signal rn_vl			: std_logic;	
 
 begin
 	
@@ -204,6 +210,7 @@ UUT_UNSCALED: entity work.int_fft_single_path
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
 		FORMAT			=> 1,	
+		RNDMODE			=> 0,	
 		XSERIES			=> XSERIES,	
 		NFFT			=> NFFT,	
 		USE_MLT			=> USE_MLT	
@@ -229,6 +236,7 @@ UUT_SCALED: entity work.int_fft_single_path
 		DATA_WIDTH		=> DATA_WIDTH,
 		TWDL_WIDTH		=> TWDL_WIDTH,	
 		FORMAT			=> 0,	
+		RNDMODE			=> 0,	
 		XSERIES			=> XSERIES,	
 		NFFT			=> NFFT,	
 		USE_MLT			=> USE_MLT	
@@ -245,6 +253,32 @@ UUT_SCALED: entity work.int_fft_single_path
 		DO_RE			=> sc_re,
 		DO_IM			=> sc_im,
 		DO_VL			=> sc_vl,
+		---- Butterflies ----
+		FLY_FWD			=> fly_fwd
+	);		
+	
+UUT_ROUND: entity work.int_fft_single_path
+	generic map (
+		DATA_WIDTH		=> DATA_WIDTH,
+		TWDL_WIDTH		=> TWDL_WIDTH,	
+		FORMAT			=> 0,	
+		RNDMODE			=> 1,	
+		XSERIES			=> XSERIES,	
+		NFFT			=> NFFT,	
+		USE_MLT			=> USE_MLT	
+	)   
+	port map ( 
+		---- Common signals ----
+		RESET			=> reset,
+		CLK				=> clk,	
+		---- Input data ----
+		DI_RE			=> di_re,
+		DI_IM			=> di_im,
+		DI_EN			=> di_en,
+		---- Output data ----
+		DO_RE			=> rn_re,
+		DO_IM			=> rn_im,
+		DO_VL			=> rn_vl,
 		---- Butterflies ----
 		FLY_FWD			=> fly_fwd
 	);		
