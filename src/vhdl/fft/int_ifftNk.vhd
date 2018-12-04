@@ -72,9 +72,9 @@ entity int_ifftNk is
     generic (
         IS_SIM      : boolean:=FALSE;        --! Simulation model: TRUE / FALSE
         NFFT        : integer:=5;            --! Number of FFT stages
-        -- MODE        : string:="UNSCALED";  --! Unscaled, Rounding, Truncate modes
-        FORMAT      : integer:=1;       --! 1 - Uscaled, 0 - Scaled
-        RNDMODE     : integer:=0;       --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
+        -- MODE        : string:="UNSCALED"; --! Unscaled, Rounding, Truncate modes
+        FORMAT      : integer:=1;            --! 1 - Uscaled, 0 - Scaled
+        RNDMODE     : integer:=0;            --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
 		RAMB_TYPE   : string:="WRAP";        --! Cross-commutation type: WRAP / CONT
         DATA_WIDTH  : integer:=16;           --! Input data width
         TWDL_WIDTH  : integer:=16;           --! Twiddle factor data width    

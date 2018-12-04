@@ -76,9 +76,9 @@ entity int_fft_ifft_pair is
         TD           : time:=0.1ns;        --! Simulation time    
         NFFT         : integer:=16;        --! Number of FFT stages
         RAMB_TYPE    : string:="WRAP";     --! Cross-commutation type: WRAP / CONT
-        -- MODE           : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
-        FORMAT         : integer:=1;       --! 1 - Uscaled, 0 - Scaled
-        RNDMODE        : integer:=0;       --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
+        -- MODE      : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
+        FORMAT       : integer:=1;         --! 1 - Uscaled, 0 - Scaled
+        RNDMODE      : integer:=0;         --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
         DATA_WIDTH   : integer:=16;        --! Data input width (8-32)
         TWDL_WIDTH   : integer:=16;        --! Data width for twiddle factor
         XSERIES      : string:="NEW";      --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
@@ -122,7 +122,7 @@ signal di_im1    : std_logic_vector(DATA_WIDTH-1 downto 0);
 
 signal do_re0    : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 signal do_im0    : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal do_re1     : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal do_re1    : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 signal do_im1    : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 
 signal di_ena    : std_logic;
@@ -136,7 +136,7 @@ signal fi_im1    : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 
 signal fo_re0    : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
 signal fo_im0    : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
-signal fo_re1     : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
+signal fo_re1    : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
 signal fo_im1    : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
 
 signal fi_ena    : std_logic;
@@ -151,7 +151,7 @@ signal qx_dt     : std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);
 ---------------- Output data ----------------
 signal dx_re     : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
 signal dx_im     : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
-signal dx_en     : std_logic;            
+signal dx_en     : std_logic;
 
 begin
 
@@ -293,10 +293,30 @@ dt_en01 <= fo_val;
 xCONT_OUT: if (RAMB_TYPE = "CONT") generate
     xSHL_OUT: entity work.iobuf_flow_int2 
         generic map (
-            BITREV      => TRUE,
+            BITREV     => TRUE,
+            ADDR       => NFFT,
+            DATA       => 2*(FORMAT*2*NFFT+DATA_WIDTH)
+        )
+        port map (
+            clk        => clk,
+            rst        => rstp,
+
+            dt_int0    => dt_int0,
+            dt_int1    => dt_int1,
+            dt_en01    => dt_en01,
+            dt_rev0    => open,
+            dt_rev1    => open,
+            dt_vl01    => open
+        );
+end generate;
+
+xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
+    xSHL_OUT: entity work.iobuf_wrap_int2
+        generic map (
+            BITREV      => FALSE,
             ADDR        => NFFT,
             DATA        => 2*(FORMAT*2*NFFT+DATA_WIDTH)
-        )
+        )    
         port map (
             clk         => clk,
             rst         => rstp,
@@ -307,26 +327,6 @@ xCONT_OUT: if (RAMB_TYPE = "CONT") generate
             dt_rev0     => open,
             dt_rev1     => open,
             dt_vl01     => open
-        );
-end generate;
-
-xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
-    xSHL_OUT: entity work.iobuf_wrap_int2
-        generic map (
-            BITREV       => FALSE,
-            ADDR         => NFFT,
-            DATA         => 2*(FORMAT*2*NFFT+DATA_WIDTH)
-        )    
-        port map (
-            clk          => clk,
-            rst          => rstp,
-
-            dt_int0      => dt_int0,
-            dt_int1      => dt_int1,
-            dt_en01      => dt_en01,
-            dt_rev0      => open,
-            dt_rev1      => open,
-            dt_vl01      => open
         );
 end generate;
 

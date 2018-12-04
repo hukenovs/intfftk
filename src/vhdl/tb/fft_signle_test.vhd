@@ -90,7 +90,7 @@ end function;
 -- **************************************************************** --
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
-constant NFFT            : integer:=10; -- Number of stages = log2(FFT LENGTH)
+constant NFFT            : integer:=8; -- Number of stages = log2(FFT LENGTH)
 
 constant DATA_WIDTH      : integer:=16; -- Data width for signal imitator    : 8-32.
 constant TWDL_WIDTH      : integer:=16; -- Data width for twiddle factor     : 16-24.
