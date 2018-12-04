@@ -76,7 +76,9 @@ entity int_fft_ifft_pair is
         TD           : time:=0.1ns;        --! Simulation time    
         NFFT         : integer:=16;        --! Number of FFT stages
         RAMB_TYPE    : string:="WRAP";     --! Cross-commutation type: WRAP / CONT
-        MODE         : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
+        -- MODE           : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
+        FORMAT         : integer:=1;       --! 1 - Uscaled, 0 - Scaled
+        RNDMODE        : integer:=0;       --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
         DATA_WIDTH   : integer:=16;        --! Data input width (8-32)
         TWDL_WIDTH   : integer:=16;        --! Data width for twiddle factor
         XSERIES      : string:="NEW";      --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
@@ -211,7 +213,9 @@ xFFT: entity work.int_fftNk
     generic map (
         IS_SIM        => FALSE,
         NFFT          => NFFT,
-        MODE          => MODE,
+        -- MODE          => MODE,
+        FORMAT        => FORMAT,
+        RNDMODE       => RNDMODE,
         RAMB_TYPE     => RAMB_TYPE,
         DATA_WIDTH    => DATA_WIDTH,
         TWDL_WIDTH    => TWDL_WIDTH,
@@ -253,7 +257,9 @@ xIFFT: entity work.int_ifftNk
     generic map (
         IS_SIM        => FALSE,
         NFFT          => NFFT,
-        MODE          => MODE,
+        -- MODE          => MODE,
+        FORMAT        => FORMAT,
+        RNDMODE       => RNDMODE,
         RAMB_TYPE     => RAMB_TYPE,
         DATA_WIDTH    => DATA_WIDTH+NFFT,
         TWDL_WIDTH    => TWDL_WIDTH,

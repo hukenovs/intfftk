@@ -74,7 +74,9 @@ entity int_fftNk is
         IS_SIM      : boolean:=FALSE;      --! Simulation model: TRUE / FALSE    
         NFFT        : integer:=5;          --! Number of FFT stages
         RAMB_TYPE   : string:="WRAP";      --! Cross-commutation type: WRAP / CONT
-        MODE        : string:="UNSCALED";  --! Unscaled, Rounding, Truncate modes
+        -- MODE        : string:="UNSCALED";  --! Unscaled, Rounding, Truncate modes
+        FORMAT      : integer:=1;       --! 1 - Uscaled, 0 - Scaled
+        RNDMODE     : integer:=0;       --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)		
         DATA_WIDTH  : integer:=16;         --! Input data width
         TWDL_WIDTH  : integer:=16;         --! Twiddle factor data width    
         XSER        : string:="OLD";       --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
@@ -102,17 +104,17 @@ end int_fftNk;
 
 architecture int_fftNk of int_fftNk is    
 
-function set_mode(inmod: string) return integer is
-begin
-    if    (inmod = "UNSCALED") then return  2;
-    elsif (inmod = "ROUNDING") then return  1;
-    elsif (inmod = "TRUNCATE") then return  0;
-    else                            return -1;
-    end if;
-end function;
+-- function set_mode(inmod: string) return integer is
+-- begin
+    -- if    (inmod = "UNSCALED") then return  2;
+    -- elsif (inmod = "ROUNDING") then return  1;
+    -- elsif (inmod = "TRUNCATE") then return  0;
+    -- else                            return -1;
+    -- end if;
+-- end function;
 
-constant FORMAT    : integer:=set_mode(MODE)/2;
-constant RNDMOD    : integer:=(set_mode(MODE) mod 2);
+-- constant FORMAT    : integer:=set_mode(MODE)/2;
+-- constant RNDMOD    : integer:=(set_mode(MODE) mod 2);
 
 type complex_WxN is array (NFFT-1 downto 0) of std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
 
@@ -186,7 +188,7 @@ begin
         generic map ( 
             IS_SIM   => IS_SIM,
             SCALE    => SCALE,
-            RNDMODE  => RNDMOD,
+            RNDMODE  => RNDMODE,
             STAGE    => NFFT-ii-1,
             DTW      => DATA_WIDTH+ii*FORMAT,
             TFW      => TWDL_WIDTH,

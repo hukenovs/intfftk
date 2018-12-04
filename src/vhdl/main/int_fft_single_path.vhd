@@ -79,8 +79,10 @@ entity int_fft_single_path is
         DATA_WIDTH     : integer:=16;        --! Data input width (8-32)
         TWDL_WIDTH     : integer:=16;        --! Data width for twiddle factor
         RAMB_TYPE      : string:="CONT";     --! Data stream mode: "CONT" - continuous, "WRAP" - bursting
-        MODE           : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
-        XSERIES        : string:="NEW";      --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW"
+        -- MODE           : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
+        FORMAT         : integer:=1;         --! 1 - Uscaled, 0 - Scaled
+        RNDMODE        : integer:=0;         --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
+		XSERIES        : string:="NEW";      --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW"
         USE_MLT        : boolean:=FALSE      --! Use Multiplier for calculation M_PI in Twiddle factor
     );
     port (
@@ -181,7 +183,9 @@ xFFT: entity work.int_fftNk
         IS_SIM        => FALSE,
         NFFT          => NFFT,
         RAMB_TYPE     => RAMB_TYPE,
-        MODE          => MODE,
+        -- MODE          => MODE,
+        FORMAT        => FORMAT,
+        RNDMODE       => RNDMODE,
         DATA_WIDTH    => DATA_WIDTH,
         TWDL_WIDTH    => TWDL_WIDTH,
         XSER          => XSERIES,

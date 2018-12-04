@@ -101,11 +101,10 @@ constant XSERIES         : string:="NEW"; -- FPGA Series: ULTRA / 7SERIES
 constant USE_MLT         : boolean:=FALSE; -- 1 - Use Multiplier for calculation M_PI
 
 constant RAMB_TYPE       : string:="WRAP"; -- Cross-commutation type: WRAP / CONT
-
 ----------------------------------------------------------------
 constant MODE1           : string:="UNSCALED";
-constant MODE2           : string:="ROUNDING";
-constant MODE3           : string:="TRUNCATE";
+constant MODE2           : string:="TRUNCATE";
+constant MODE3           : string:="ROUNDING";
 
 constant FORMAT1         : integer:=set_mode(MODE1)/2;
 constant FORMAT2         : integer:=set_mode(MODE2)/2;
@@ -126,9 +125,9 @@ signal di_re             : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'
 signal di_im             : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
 signal di_en             : std_logic:='0';
 
-signal do_re             : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal do_im             : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal do_vl             : std_logic;
+-- signal do_re             : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+-- signal do_im             : std_logic_vector(FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+-- signal do_vl             : std_logic;
 
 begin
 
@@ -243,7 +242,9 @@ UUT_UNSCALED: entity work.int_fft_single_path
     generic map (
         DATA_WIDTH  => DATA_WIDTH,
         TWDL_WIDTH  => TWDL_WIDTH,    
-        MODE        => "UNSCALED",
+        -- MODE        => "UNSCALED",
+		FORMAT      => FORMAT1,
+		RNDMODE     => RNDMOD1,
         RAMB_TYPE   => "CONT",
         XSERIES     => XSERIES,    
         NFFT        => NFFT,
@@ -269,7 +270,9 @@ UUT_SCALED: entity work.int_fft_single_path
     generic map (
         DATA_WIDTH  => DATA_WIDTH,
         TWDL_WIDTH  => TWDL_WIDTH,
-        MODE        => "TRUNCATE",
+        -- MODE        => "TRUNCATE",
+		FORMAT      => FORMAT2,
+		RNDMODE     => RNDMOD2,
         RAMB_TYPE   => "CONT",       
         XSERIES     => XSERIES,
         NFFT        => NFFT,
@@ -295,7 +298,9 @@ UUT_ROUND: entity work.int_fft_single_path
     generic map (
         DATA_WIDTH  => DATA_WIDTH,
         TWDL_WIDTH  => TWDL_WIDTH,    
-        MODE        => "ROUNDING",
+        -- MODE        => "ROUNDING",
+		FORMAT      => FORMAT3,
+		RNDMODE     => RNDMOD3,
         RAMB_TYPE   => "CONT",        
         XSERIES     => XSERIES,
         NFFT        => NFFT,
