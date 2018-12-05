@@ -98,15 +98,11 @@ end inbuf_half_wrap;
 
 architecture inbuf_half_wrap of inbuf_half_wrap is
 
-signal cnt          : std_logic_vector(ADDR-0 downto 0);
-
 signal ram_we       : std_logic;
 signal ram_re       : std_logic;
 
 signal cnt_ad       : std_logic_vector(ADDR-1 downto 0);
 signal ram_addr     : std_logic_vector(ADDR-2 downto 0);
-
-
 signal ram_dia      : std_logic_vector(DATA-1 downto 0);
 signal ram_doa      : std_logic_vector(DATA-1 downto 0);
 signal ram_vl       : std_logic;
@@ -121,23 +117,13 @@ pr_cnt: process(clk) is
 begin
     if rising_edge(clk) then
         if (reset = '1') then
-            cnt      <= (0 => '1', others => '0');
-            cnt_ad   <= (others => '0');
-            ram_we   <= '0';
+            cnt_ad <= (others => '0');
+            ram_we <= '0';
+            ram_re <= '0';
         else
-            ---- Enable counter for wr / rd ----
-            if (di_en = '1') then
-                if (cnt(cnt'left) = '1') then
-                    cnt <= (0 => '1', others => '0');
-                else
-                    cnt <= cnt + '1';
-                end if;
-            end if; 
-
             ---- Write / Read enable ----
             ram_we <= di_en and not cnt_ad(ADDR-1);
             ram_re <= di_en and cnt_ad(ADDR-1);
-
             ---- Write address ----
             if (di_en = '1') then
                 cnt_ad <= cnt_ad + '1';

@@ -211,10 +211,10 @@ end generate;
 
 G_HIGH_STAGE: if (STAGES >= 9) generate
     type ram_t is array(0 to 2**(STAGES)-1) of std_logic_vector(NWIDTH-1 downto 0);
-    signal ram0, ram1            : ram_t;
-    signal dout0, dout1            : std_logic_vector(NWIDTH-1 downto 0);
+    signal ram0, ram1           : ram_t;
+    signal dout0, dout1         : std_logic_vector(NWIDTH-1 downto 0);
 
-    attribute ram_style            : string;
+    attribute ram_style         : string;
     attribute ram_style of RAM0 : signal is "block";
     attribute ram_style of RAM1 : signal is "block";
     
