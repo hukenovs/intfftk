@@ -37,7 +37,7 @@
 --
 -------------------------------------------------------------------------------
 --
---  Notes: 
+--  Notes:
 --      Date: 03.12.2018. 
 --    Rounding mode should be tested on DW > 48! see int_dif2_fly.vhd
 --
@@ -105,7 +105,6 @@ end int_fft_single_path;
 
 architecture int_fft_single_path of int_fft_single_path is   
 
-signal rstp       : std_logic;
 signal rstn       : std_logic;
 
 ---------------- Input data ----------------
@@ -149,28 +148,47 @@ signal dr_en      : std_logic;
 
 begin
 
-rstp <= not reset when rising_edge(clk);
-rstn <= reset when rising_edge(clk);
+rstn <= not reset when rising_edge(clk);
 
 di_dt <= di_im & di_re;
 
 -------------------- INPUT BUFFER --------------------
-xIN_BUF: entity work.inbuf_half_path
-    generic map (
-        ADDR      => NFFT,
-        DATA      => 2*DATA_WIDTH
-    )    
-    port map (
-        clk       => clk,
-        reset     => rstp,
-    
-        di_dt     => di_dt,
-        di_en     => di_en,
+xCONT: if (RAMB_TYPE = "CONT") generate
+    xIN_BUF: entity work.inbuf_half_path
+        generic map (
+            ADDR      => NFFT,
+            DATA      => 2*DATA_WIDTH
+        )    
+        port map (
+            clk       => clk,
+            reset     => reset,
+        
+            di_dt     => di_dt,
+            di_en     => di_en,
 
-        da_dt     => da_dt,
-        db_dt     => db_dt,
-        ab_vl     => di_ena
-    );
+            da_dt     => da_dt,
+            db_dt     => db_dt,
+            ab_vl     => di_ena
+        );
+end generate;
+xWRAP: if (RAMB_TYPE = "WRAP") generate
+    xIN_BUF: entity work.inbuf_half_wrap
+        generic map (
+            ADDR      => NFFT,
+            DATA      => 2*DATA_WIDTH
+        )    
+        port map (
+            clk       => clk,
+            reset     => reset,
+        
+            di_dt     => di_dt,
+            di_en     => di_en,
+
+            da_dt     => da_dt,
+            db_dt     => db_dt,
+            ab_vl     => di_ena
+        );
+end generate;
 
 di_re0 <= da_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
 di_im0 <= da_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
@@ -206,7 +224,7 @@ xFFT: entity work.int_fftNk
         DO_IM1        => do_im1,
         DO_VAL        => do_val,
         
-        RST           => rstp, 
+        RST           => reset, 
         CLK           => clk
     );
 
@@ -223,7 +241,7 @@ xSHL_BUF: entity work.iobuf_flow_int2
     )
     port map (
         clk        => clk,
-        rst        => rstp,    
+        rst        => reset,
 
         dt_int0    => dt_int0, 
         dt_int1    => dt_int1, 
@@ -242,7 +260,7 @@ xOUT_BUF : entity work.outbuf_half_path
     )
     port map (
         clk        => clk,
-        reset      => rstp,        
+        reset      => reset,
 
         da_dt      => dt_rev0,
         db_dt      => dt_rev1,
@@ -263,7 +281,7 @@ xBITREV_RE : entity work.int_bitrev_ord
     )
     port map (
         clk        => clk,
-        reset      => rstn,
+        reset      => reset,
 
         di_dt      => dx_re,
         di_en      => dx_en,
@@ -278,7 +296,7 @@ xBITREV_IM : entity work.int_bitrev_ord
     )
     port map (
         clk        => clk,
-        reset      => rstn,
+        reset      => reset,
 
         di_dt      => dx_im,
         di_en      => dx_en,
