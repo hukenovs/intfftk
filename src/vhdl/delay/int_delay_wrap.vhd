@@ -8,7 +8,7 @@
 --
 -------------------------------------------------------------------------------
 --
--- Description : Common delay line for FFT	
+-- Description : Common delay line for FFT (Bursting mode - I)
 --
 -------------------------------------------------------------------------------
 --
@@ -47,7 +47,7 @@
 -- Data for "A" line - 1'st part of FFT data (from 0 to N/2-1)
 -- Data for "B" line - 2'nd part of FFT data (from N/2 to N-1)
 --
--- Delay line 0:  	
+-- Delay line 0:      
 -- 
 -- Input:        ________________________
 -- DI_EN     ___/                        \____
@@ -97,7 +97,7 @@
 -- 
 -------------------------------------------------------------------------------
 --
---               Delay line scheme (+ example):
+--  Delay line scheme (+ example):
 --                     
 --         |           |             |            | 
 --         |   _____   |    ______   |            | 
@@ -135,10 +135,10 @@
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 --
---	GNU GENERAL PUBLIC LICENSE
+--  GNU GENERAL PUBLIC LICENSE
 --  Version 3, 29 June 2007
 --
---	Copyright (c) 2018 Kapitanov Alexander
+--  Copyright (c) 2018 Kapitanov Alexander
 --
 --  This program is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
@@ -166,99 +166,98 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
 entity int_delay_wrap is
-	generic(
-		NFFT		: integer:=18; --! FFT NFFT
-		STAGE 		: integer:=0; --! Stage number
-		NWIDTH		: integer:=64 --! Data width
-	);
-	port(
-		DI_AA 		: in  std_logic_vector(NWIDTH-1 downto 0); --! Data in even
-		DI_BB 		: in  std_logic_vector(NWIDTH-1 downto 0); --! Data in odd
-		DI_EN 		: in  std_logic; --! Data di_enble
-		DO_AA 		: out std_logic_vector(NWIDTH-1 downto 0); --! Data out even
-		DO_BB 		: out std_logic_vector(NWIDTH-1 downto 0); --! Data out odd
-		DO_VL		: out std_logic; --! Data do_vlid
+    generic (
+        NFFT        : integer:=18; --! FFT NFFT
+        STAGE       : integer:=0; --! Stage number
+        NWIDTH      : integer:=64 --! Data width
+    );
+    port (
+        DI_AA       : in  std_logic_vector(NWIDTH-1 downto 0); --! Data in even
+        DI_BB       : in  std_logic_vector(NWIDTH-1 downto 0); --! Data in odd
+        DI_EN       : in  std_logic; --! Data di_enble
+        DO_AA       : out std_logic_vector(NWIDTH-1 downto 0); --! Data out even
+        DO_BB       : out std_logic_vector(NWIDTH-1 downto 0); --! Data out odd
+        DO_VL       : out std_logic; --! Data do_vlid
 
-		RST  		: in  std_logic; --! Reset
-		CLK 		: in  std_logic --! Clock	
-	);	
+        RST         : in  std_logic; --! Reset
+        CLK         : in  std_logic --! Clock
+    );
 end int_delay_wrap;
 
 architecture int_delay_wrap of int_delay_wrap is 
 
-CONSTANT N_INV			: integer:=NFFT-STAGE-2; 
+CONSTANT N_INV       : integer:=NFFT-STAGE-2; 
 
 ---------------- Ram 0/1 signal declaration ----------------
-signal ram0_din			: std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram1_din			: std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram0_dout    	: std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram1_dout    	: std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram0_din      : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram1_din      : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram0_dout     : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram1_dout     : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
 
-signal addr_rd0			: std_logic_vector(N_INV-1 downto 0);
-signal addr_rd1			: std_logic_vector(N_INV-1 downto 0);
-signal addr_wr0			: std_logic_vector(N_INV-1 downto 0);
-signal addr_wr1			: std_logic_vector(N_INV-1 downto 0);
+signal addr_rd0      : std_logic_vector(N_INV-1 downto 0);
+signal addr_rd1      : std_logic_vector(N_INV-1 downto 0);
+signal addr_wr0      : std_logic_vector(N_INV-1 downto 0);
+signal addr_wr1      : std_logic_vector(N_INV-1 downto 0);
 
-signal addr_wz1			: std_logic_vector(N_INV-1 downto 0);
+signal addr_wz1      : std_logic_vector(N_INV-1 downto 0);
 
-signal rd0				: std_logic;
-signal rd1				: std_logic;
-signal we0				: std_logic;
-signal we1				: std_logic;
+signal rd0           : std_logic;
+signal rd1           : std_logic;
+signal we0           : std_logic;
+signal we1           : std_logic;
 
 ---------------- Ram 0/1 arrays ----------------
 type ram_t is array(0 to 2**(N_INV)-1) of std_logic_vector(NWIDTH-1 downto 0);  
-signal bram0			: ram_t;
-signal bram1			: ram_t;	
-
+signal bram0         : ram_t;
+signal bram1         : ram_t;    
 
 ---------------- Switch / Counter / Delays ----------------
-signal cross			: std_logic:='0';
-signal cnt_adr			: std_logic_vector(N_INV downto 0);
+signal cross         : std_logic:='0';
+signal cnt_adr       : std_logic_vector(N_INV downto 0);
 
-signal valid			: std_logic;
+signal valid         : std_logic;
 
-signal di_az			: std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal do_zz			: std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal di_ez			: std_logic;
+signal di_az         : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal do_zz         : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal di_ez         : std_logic;
 
-signal wr_1st			: std_logic;
+signal wr_1st        : std_logic;
 
 begin
 
 ---- Common processes for delay lines ----
 pr_wrcr: process(clk) is
 begin
-	if rising_edge(clk) then
-		di_ez <= di_en;
-		if (rst = '1') then 
-			cnt_adr <= (others => '0');
-		else
-			if (di_en = '1') then
-				cnt_adr <= cnt_adr + '1';
-			end if;
-		end if;	
-	end if;
-end process;	
+    if rising_edge(clk) then
+        di_ez <= di_en;
+        if (rst = '1') then 
+            cnt_adr <= (others => '0');
+        else
+            if (di_en = '1') then
+                cnt_adr <= cnt_adr + '1';
+            end if;
+        end if;
+    end if;
+end process;
 
-cross <= cnt_adr(N_INV) when rising_edge(clk) and (di_en = '1');	 
+cross <= cnt_adr(N_INV) when rising_edge(clk) and (di_en = '1');     
 
 ---------------- Write 1st Block ---------------- 
 pr_cnt1st: process(clk) is
 
 begin
-	if rising_edge(clk) then
-		if (rst = '1') then
-			wr_1st <= '0';
-		else
-			if (cnt_adr(N_INV) = '1') then
-				wr_1st <= '1';
-			end if;
-		end if;
-	end if;
+    if rising_edge(clk) then
+        if (rst = '1') then
+            wr_1st <= '0';
+        else
+            if (cnt_adr(N_INV) = '1') then
+                wr_1st <= '1';
+            end if;
+        end if;
+    end if;
 end process;
 
-ram0_din <=	di_bb;
+ram0_din <= di_bb;
 
 ---- Address Read / write Ram 0 ----
 addr_wr0 <= cnt_adr(N_INV-1 downto 0);
@@ -280,65 +279,65 @@ rd1 <= di_ez when rising_edge(clk);
 
 ------------ Switch Ram 1 Input ------------
 pr_din: process(clk) is
-begin		
-	if rising_edge(clk) then
-		di_az <= di_aa;
-		if (cross = '1') then
-			ram1_din <= ram0_dout; 
-		else
-			ram1_din <= di_az;
-		end if;
-	end if;
+begin        
+    if rising_edge(clk) then
+        di_az <= di_aa;
+        if (cross = '1') then
+            ram1_din <= ram0_dout; 
+        else
+            ram1_din <= di_az;
+        end if;
+    end if;
 end process; 
 
 ------------ Switch Output & Valid ------------
 DO_AA <= ram1_dout;
 pr_dout: process(clk) is
 begin
-	if rising_edge(clk) then
-		valid <= di_ez and wr_1st;	
-		if (cross = '1') then
-			do_zz <= di_az;
-		else
-			do_zz <= ram0_dout;
-		end if;
-		DO_BB <= do_zz;
-		DO_VL <= valid;
-	end if;
+    if rising_edge(clk) then
+        valid <= di_ez and wr_1st;    
+        if (cross = '1') then
+            do_zz <= di_az;
+        else
+            do_zz <= ram0_dout;
+        end if;
+        DO_BB <= do_zz;
+        DO_VL <= valid;
+    end if;
 end process;
 
 ------------ First RAMB delay line ------------ 
 xRAM0: process(clk) is
 begin
-	if (clk'event and clk = '1') then
-		if (rst = '1') then
-			ram0_dout <= (others => '0');
-		else
-			if (rd0 = '1') then
-				ram0_dout <= bram0(conv_integer(addr_rd0));
-			end if;
-		end if;				
-		if (we0 = '1') then
-			bram0(conv_integer(addr_wr0)) <= ram0_din;
-		end if;
-	end if;	
+    if (clk'event and clk = '1') then
+        if (rst = '1') then
+            ram0_dout <= (others => '0');
+        else
+            if (rd0 = '1') then
+                ram0_dout <= bram0(conv_integer(addr_rd0));
+            end if;
+        end if;                
+        if (we0 = '1') then
+            bram0(conv_integer(addr_wr0)) <= ram0_din;
+        end if;
+    end if;    
 end process;
 
 ------------ Second RAMB delay line ------------
 xRAM1: process(clk) is
 begin
-	if (clk'event and clk = '1') then
-		if (rst = '1') then
-			ram1_dout <= (others => '0');
-		else
-			if (rd1 = '1') then
-				ram1_dout <= bram1(conv_integer(addr_rd1));
-			end if;
-		end if;
-		if (we1 = '1') then
-			bram1(conv_integer(addr_wr1)) <= ram1_din;
-		end if;
-	end if;	
+    if (clk'event and clk = '1') then
+        if (rst = '1') then
+            ram1_dout <= (others => '0');
+        else
+            if (rd1 = '1') then
+                ram1_dout <= bram1(conv_integer(addr_rd1));
+            end if;
+        end if;
+        if (we1 = '1') then
+            bram1(conv_integer(addr_wr1)) <= ram1_din;
+        end if;
+    end if;    
 end process;
 
 end int_delay_wrap;
