@@ -17,7 +17,7 @@
 --       Bit-reverse w/ signle cache RAM for operation!
 --
 --    Version 2.1  07.12.2018
---       Fix some logic errors and clean up source code.
+--       Fix some logic errors and change RAM mode to READ_FIRST
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -51,8 +51,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-entity int_bitrev_ord2 is
-    generic (    
+entity int_bitrev_order is
+    generic (
         STAGES        : integer:=11; --! FFT stages
         NWIDTH        : integer:=16 --! Data width        
     );
@@ -66,9 +66,9 @@ entity int_bitrev_ord2 is
         do_dt        : out std_logic_vector(NWIDTH-1 downto 0); --! Data output    
         do_vl        : out std_logic --! DATA valid        
     );    
-end int_bitrev_ord2;
+end int_bitrev_order;
 
-architecture int_bitrev_ord2 of int_bitrev_ord2 is
+architecture int_bitrev_order of int_bitrev_order is
 
 function bit_pair(Len: integer; Dat: std_logic_vector) return std_logic_vector is
     variable Tmp : std_logic_vector(Len-1 downto 0);
@@ -165,4 +165,4 @@ end process;
 do_dt <= ram_do; -- when rising_edge(clk);
 do_vl <= vld;    -- when rising_edge(clk);
 
-end int_bitrev_ord2;
+end int_bitrev_order;
