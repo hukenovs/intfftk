@@ -257,7 +257,7 @@ begin
             cnt_even <= (others => '0');
             cnt_odd  <= WR_DEL;
             sw_ptr   <= (0 => '1', others => '0');
-            sw_ena     <= '0';
+            sw_ena   <= '0';
         else
             ---- Find increment mux ----
             if (dt_en01 = '1') then
@@ -290,7 +290,7 @@ begin
 end process;
 
 ---------------- Read 1st ----------------
-pr_pr1st: process(clk)
+pr_pr1st: process(clk) is
 begin
     if (clk'event and clk='1') then
         if (rst = '1') then
@@ -313,7 +313,7 @@ ram_adra <= cnt_even; -- when rising_edge(clk);
 ram_adrb <= cnt_odd;  -- when rising_edge(clk);
 
 ---- RAM WR/RD ----
-pr_rdwr: process(clk)
+pr_rdwr: process(clk) is
 begin
     if (clk'event and clk='1') then
         if (rst = '1') then
@@ -327,7 +327,7 @@ begin
 end process;
 
 ---- Data out ----
-pr_out: process(clk)
+pr_out: process(clk) is
 begin
     if (clk'event and clk='1') then
         dt_rev0 <= ram_doa;

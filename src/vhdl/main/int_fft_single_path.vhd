@@ -17,10 +17,12 @@
 --
 --    FLY_FWD       - (s) - Use butterflies into Forward FFT: 1 - TRUE, 0 - FALSE
 --
---    RAMB_TYPE     - (p) - Cross-commutation type: "WRAP" / "CONT"
+--    RAMB_TYPE*    - (p) - Cross-commutation type: "WRAP" / "CONT"
 --       "WRAP" - data valid strobe can be bursting (no need continuous valid),
 --       "CONT" - data valid must be continuous (strobe length = N/2 points);
--- 
+--
+--  * - for single-path FFT use only "CONT" mode or change RTL for your purpose.
+--
 --    XSERIES       - (p) - FPGA Series: ULTRASCALE / 7SERIES
 --    USE_MLT       - (p) - Use Multiplier for calculation M_PI in Twiddle factor
 --    MODE          - (p) - Select output data format and roun mode
@@ -78,7 +80,7 @@ entity int_fft_single_path is
         NFFT           : integer:=13;        --! Number of FFT stages
         DATA_WIDTH     : integer:=16;        --! Data input width (8-32)
         TWDL_WIDTH     : integer:=16;        --! Data width for twiddle factor
-        RAMB_TYPE      : string:="CONT";     --! Data stream mode: "CONT" - continuous, "WRAP" - bursting
+        -- RAMB_TYPE      : string:="CONT";     --! Data stream mode: "CONT" - continuous, "WRAP" - bursting
         -- MODE           : string:="UNSCALED"; --! Unscaled, Rounding, Truncate
         FORMAT         : integer:=1;         --! 1 - Uscaled, 0 - Scaled
         RNDMODE        : integer:=0;         --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
@@ -105,8 +107,6 @@ end int_fft_single_path;
 
 architecture int_fft_single_path of int_fft_single_path is   
 
-signal rstn       : std_logic;
-
 ---------------- Input data ----------------
 signal di_dt      : std_logic_vector(2*DATA_WIDTH-1 downto 0);
 signal da_dt      : std_logic_vector(2*DATA_WIDTH-1 downto 0);
@@ -131,10 +131,6 @@ signal dt_int0    : std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
 signal dt_int1    : std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
 signal dt_en01    : std_logic;     
 
-signal dt_rev0    : std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
-signal dt_rev1    : std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
-signal dt_vl01    : std_logic;
-
 signal qx_dt      : std_logic_vector(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0);
 
 ---------------- Output data ----------------
@@ -148,47 +144,25 @@ signal dr_en      : std_logic;
 
 begin
 
-rstn <= not reset when rising_edge(clk);
-
 di_dt <= di_im & di_re;
 
 -------------------- INPUT BUFFER --------------------
-xCONT: if (RAMB_TYPE = "CONT") generate
-    xIN_BUF: entity work.inbuf_half_path
-        generic map (
-            ADDR      => NFFT,
-            DATA      => 2*DATA_WIDTH
-        )    
-        port map (
-            clk       => clk,
-            reset     => reset,
-        
-            di_dt     => di_dt,
-            di_en     => di_en,
+xIN_BUF: entity work.inbuf_half_path
+    generic map (
+        ADDR      => NFFT,
+        DATA      => 2*DATA_WIDTH
+    )    
+    port map (
+        clk       => clk,
+        reset     => reset,
+    
+        di_dt     => di_dt,
+        di_en     => di_en,
 
-            da_dt     => da_dt,
-            db_dt     => db_dt,
-            ab_vl     => di_ena
-        );
-end generate;
-xWRAP: if (RAMB_TYPE = "WRAP") generate
-    xIN_BUF: entity work.inbuf_half_wrap
-        generic map (
-            ADDR      => NFFT,
-            DATA      => 2*DATA_WIDTH
-        )    
-        port map (
-            clk       => clk,
-            reset     => reset,
-        
-            di_dt     => di_dt,
-            di_en     => di_en,
-
-            da_dt     => da_dt,
-            db_dt     => db_dt,
-            ab_vl     => di_ena
-        );
-end generate;
+        da_dt     => da_dt,
+        db_dt     => db_dt,
+        ab_vl     => di_ena
+    );
 
 di_re0 <= da_dt(1*DATA_WIDTH-1 downto 0*DATA_WIDTH);
 di_im0 <= da_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
@@ -200,7 +174,7 @@ xFFT: entity work.int_fftNk
     generic map (
         IS_SIM        => FALSE,
         NFFT          => NFFT,
-        RAMB_TYPE     => RAMB_TYPE,
+        RAMB_TYPE     => "CONT",
         -- MODE          => MODE,
         FORMAT        => FORMAT,
         RNDMODE       => RNDMODE,
@@ -233,25 +207,6 @@ dt_int0 <= do_im0 & do_re0;
 dt_int1 <= do_im1 & do_re1;
 dt_en01 <= do_val;
 
-xSHL_BUF: entity work.iobuf_flow_int2 
-    generic map (
-        BITREV     => FALSE,
-        ADDR       => NFFT,
-        DATA       => 2*(FORMAT*NFFT+DATA_WIDTH)
-    )
-    port map (
-        clk        => clk,
-        rst        => reset,
-
-        dt_int0    => dt_int0, 
-        dt_int1    => dt_int1, 
-        dt_en01    => dt_en01,
-        
-        dt_rev0    => dt_rev0,
-        dt_rev1    => dt_rev1,
-        dt_vl01    => dt_vl01
-    );
-
 -------------------- OUTPUT BUFFER --------------------    
 xOUT_BUF : entity work.outbuf_half_path
     generic map (
@@ -262,12 +217,12 @@ xOUT_BUF : entity work.outbuf_half_path
         clk        => clk,
         reset      => reset,
 
-        da_dt      => dt_rev0,
-        db_dt      => dt_rev1,
-        ab_vl      => dt_vl01,
+        da_dt      => dt_int0,
+        db_dt      => dt_int1,
+        ab_vl      => dt_en01,
 
         do_dt      => qx_dt,
-        do_en      => dx_en    
+        do_en      => dx_en
     );
 
 dx_re(FORMAT*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*NFFT+DATA_WIDTH));

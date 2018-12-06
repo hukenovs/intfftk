@@ -95,7 +95,7 @@ signal cnt1st        : std_logic_vector(STAGES downto 0);
 
 begin
 
--- Data out and valid proc --
+---------------- Data out and valid proc ----------------
 pr_cnt1: process(clk) is
 begin
     if rising_edge(clk) then
@@ -106,7 +106,7 @@ begin
                 if (cnt1st(STAGES) = '0') then
                     cnt1st <= cnt1st + '1';
                 end if;
-            end if;    
+            end if;
         end if;
     end if;
 end process;
@@ -122,12 +122,13 @@ begin
                 do_dt <= ram_do1;
             else
                 do_dt <= ram_do0;
-            end if;        end if;
+            end if;
+        end if;
     end if;
 end process;    
 do_vl <= valid and cnt1st(STAGES) when rising_edge(clk);
 
--- Common proc --    
+---------------- Common proc ----------------
 ram_di0 <= di_dt when rising_edge(clk);
 ram_di1 <= di_dt when rising_edge(clk);
 
@@ -158,7 +159,7 @@ begin
     end if;
 end process;
 
--- Read / Address proc --
+---------------- Read / Address proc ----------------
 rd0 <= we1;
 rd1 <= we0;
 
@@ -170,7 +171,7 @@ G_BR_ADDR: for ii in 0 to STAGES-1 generate
     addrb(ii) <= cnt(STAGES-1-ii) when rising_edge(clk);
 end generate;
 
--- RAMB generator --
+---------------- RAMB generator ----------------
 G_LOW_STAGE: if (STAGES < 9) generate
     type ram_t is array(0 to 2**(STAGES)-1) of std_logic;
 begin
@@ -228,7 +229,7 @@ begin
                 dout0 <= (others => '0');
             else
                 if (rd0 = '1') then
-                    dout0 <= ram0(conv_integer(addrb)); -- dual port
+                    dout0 <= ram0(conv_integer(addrb)); ---- dual port
                 end if;
             end if;    
             
@@ -246,7 +247,7 @@ begin
                 dout1 <= (others => '0');
             else
                 if (rd1 = '1') then
-                    dout1 <= ram1(conv_integer(addrb)); -- dual port
+                    dout1 <= ram1(conv_integer(addrb)); ---- dual port
                 end if;
             end if;
             
@@ -255,7 +256,7 @@ begin
             end if;
         end if;    
     end process;
-    
+
     dmux <= cntz(1) when rising_edge(clk);
     valid <= (vl0 or vl1) when rising_edge(clk);
 end generate;
