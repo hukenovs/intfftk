@@ -39,9 +39,16 @@
 --
 -------------------------------------------------------------------------------
 --
+--  !! ********************************************************************* !!
+--  Important note: You have to use RAMB_TYPE = "CONT" parameter for 
+--                  single FFT core because of FFT has a double-parallelizm
+--                  scheme (two data word on one clock cycle). It is same as 
+--                  poliphase structure.
+--  !! ********************************************************************* !!
+--
 --  Notes:
---      Date: 03.12.2018. 
---    Rounding mode should be tested on DW > 48! see int_dif2_fly.vhd
+--    Date: 06.12.2018. 
+--      Rounding mode should be tested on DW > 48! see int_dif2_fly.vhd
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -189,25 +196,24 @@ xFFT: entity work.int_fftNk
         DI_RE1        => di_re1,
         DI_IM1        => di_im1,
         DI_ENA        => di_ena,
-    
+
         USE_FLY       => fly_fwd,
-    
+
         DO_RE0        => do_re0,
         DO_IM0        => do_im0,
         DO_RE1        => do_re1,
         DO_IM1        => do_im1,
         DO_VAL        => do_val,
-        
+
         RST           => reset, 
         CLK           => clk
     );
 
--------------------- SHUFFLE BUFFER --------------------    
+-------------------- OUTPUT BUFFER --------------------       
 dt_int0 <= do_im0 & do_re0;
 dt_int1 <= do_im1 & do_re1;
 dt_en01 <= do_val;
 
--------------------- OUTPUT BUFFER --------------------    
 xOUT_BUF : entity work.outbuf_half_path
     generic map (
         ADDR       => NFFT,
@@ -229,10 +235,11 @@ dx_re(FORMAT*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*NFFT+DATA_WIDTH)-1 
 dx_im(FORMAT*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(FORMAT*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*NFFT+DATA_WIDTH));
 
 -------------------- BIT REVERSE ORDER --------------------
-xBITREV_RE : entity work.int_bitrev_ord
+xBR_RE : entity work.int_bitrev_order
     generic map (
+        PAIR       => TRUE,
         STAGES     => NFFT,
-        NWIDTH     => FORMAT*NFFT+DATA_WIDTH    
+        NWIDTH     => FORMAT*NFFT+DATA_WIDTH
     )
     port map (
         clk        => clk,
@@ -244,10 +251,11 @@ xBITREV_RE : entity work.int_bitrev_ord
         do_vl      => dr_en
     );
 
-xBITREV_IM : entity work.int_bitrev_ord
+xBR_IM : entity work.int_bitrev_order
     generic map (
+        PAIR       => TRUE,        
         STAGES     => NFFT,
-        NWIDTH     => FORMAT*NFFT+DATA_WIDTH    
+        NWIDTH     => FORMAT*NFFT+DATA_WIDTH
     )
     port map (
         clk        => clk,

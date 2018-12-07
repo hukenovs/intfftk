@@ -16,8 +16,15 @@
 --    Version 2.0  01.08.2018
 --       Bit-reverse w/ signle cache RAM for operation!
 --
---    Version 2.1  07.12.2018
+--    Version 2.1  06.12.2018
 --       Fix some logic errors and change RAM mode to READ_FIRST
+--
+--    Version 2.2  07.12.2018
+--       Add PAIR parameter:
+--
+--       PAIR = TRUE : Convert data flow from bit-reverse order to normal order
+--       PAIR = FALSE: Convert data flow from two-part bit-reverse order 
+--                     to normal order.
 --
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
@@ -53,30 +60,46 @@ use ieee.std_logic_unsigned.all;
 
 entity int_bitrev_order is
     generic (
-        STAGES        : integer:=11; --! FFT stages
-        NWIDTH        : integer:=16 --! Data width        
+        PAIR         : boolean:=TRUE;   --! Bitreverse mode: 
+                                        --  TRUE - Even/Odd or FALSE - Half Pair
+        STAGES       : integer:=11;     --! FFT stages
+        NWIDTH       : integer:=16      --! Data width
     );
-    port (                                
-        clk          : in  std_logic; --! Clock
-        reset         : in  std_logic; --! Reset        
+    port (
+        clk          : in  std_logic;   --! Clock
+        reset        : in  std_logic;   --! Reset
         
         di_dt        : in  std_logic_vector(NWIDTH-1 downto 0); --! Data input
-        di_en        : in  std_logic; --! DATA enable
+        di_en        : in  std_logic;   --! DATA enable
 
         do_dt        : out std_logic_vector(NWIDTH-1 downto 0); --! Data output    
-        do_vl        : out std_logic --! DATA valid        
+        do_vl        : out std_logic    --! DATA valid
     );    
 end int_bitrev_order;
 
 architecture int_bitrev_order of int_bitrev_order is
 
-function bit_pair(Len: integer; Dat: std_logic_vector) return std_logic_vector is
+function bit_pair(Mode: boolean; Len: integer; Dat: std_logic_vector) return std_logic_vector is
     variable Tmp : std_logic_vector(Len-1 downto 0);
 begin 
-    Tmp(0) :=  Dat(Len-1);
-    for ii in 1 to Len-1 loop
-        Tmp(ii) := Dat(ii-1);
-    end loop;
+    if (Mode = TRUE) then
+        Tmp(Len-1) :=  Dat(Len-1);
+        for ii in 0 to Len-2 loop
+            Tmp(ii) := Dat(Len-2-ii);
+        end loop;
+        --Tmp(0) :=  Dat(Len-1);
+        --for ii in 1 to Len-1 loop
+        --    Tmp(ii) := Dat(ii-1);
+        --end loop;
+        --Tmp(Len-1) :=  Dat(0);
+        --for ii in 1 to Len-1 loop
+        --    Tmp(ii-1) := Dat(ii);
+        --end loop;
+    else
+        for ii in 0 to Len-1 loop
+            Tmp(ii) := Dat(Len-1-ii);
+        end loop;
+    end if;
     return Tmp; 
 end function;
 
@@ -97,7 +120,7 @@ signal bmem     : ram_t;
 
 begin
 
----------------- Data out and valid proc ----------------    
+---------------- Data out and valid proc ----------------
 pr_cnt1: process(clk) is
 begin
     if rising_edge(clk) then
@@ -131,7 +154,7 @@ end process;
 
 wea <= di_en when rising_edge(clk);
 
----------------- Read / Address proc ----------------    
+---------------- Read / Address proc ----------------
 vld <= rdt when rising_edge(clk);
 rdt <= di_en and cnt1st(STAGES) when rising_edge(clk);
 
@@ -141,9 +164,7 @@ begin
         if (cnt(cnt'left) = '0') then
             ram_adr <= cnt(STAGES-1 downto 0);
         else    
-            xl2: for ii in 0 to STAGES-1 loop
-                ram_adr(ii) <= cnt(STAGES-1-ii);
-            end loop;
+            ram_adr <= bit_pair(PAIR, STAGES, cnt);
         end if;
     end if;
 end process;
@@ -161,7 +182,7 @@ begin
     end if;    
 end process;
 
----------------- Data out and valid proc ----------------    
+---------------- Data out and valid proc ----------------
 do_dt <= ram_do; -- when rising_edge(clk);
 do_vl <= vld;    -- when rising_edge(clk);
 
