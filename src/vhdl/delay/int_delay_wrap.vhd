@@ -189,10 +189,10 @@ architecture int_delay_wrap of int_delay_wrap is
 CONSTANT N_INV       : integer:=NFFT-STAGE-2; 
 
 ---------------- Ram 0/1 signal declaration ----------------
-signal ram0_din      : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram1_din      : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram0_dout     : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram1_dout     : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram0_di       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram1_di       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram0_do       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+signal ram1_do       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
 
 signal addr_rd0      : std_logic_vector(N_INV-1 downto 0);
 signal addr_rd1      : std_logic_vector(N_INV-1 downto 0);
@@ -250,14 +250,15 @@ begin
         if (rst = '1') then
             wr_1st <= '0';
         else
-            if (cnt_adr(N_INV) = '1') then
+            -- if (cnt_adr(N_INV) = '1') then
+            if ((cnt_adr(N_INV) = '1') and (di_en = '1')) then
                 wr_1st <= '1';
             end if;
         end if;
     end if;
 end process;
 
-ram0_din <= di_bb;
+ram0_di <= di_bb;
 
 ---- Address Read / write Ram 0 ----
 addr_wr0 <= cnt_adr(N_INV-1 downto 0);
@@ -278,28 +279,28 @@ we1 <= di_ez when rising_edge(clk);
 rd1 <= di_ez when rising_edge(clk);
 
 ------------ Switch Ram 1 Input ------------
-pr_din: process(clk) is
+pr_di: process(clk) is
 begin        
     if rising_edge(clk) then
         di_az <= di_aa;
         if (cross = '1') then
-            ram1_din <= ram0_dout; 
+            ram1_di <= ram0_do; 
         else
-            ram1_din <= di_az;
+            ram1_di <= di_az;
         end if;
     end if;
 end process; 
 
 ------------ Switch Output & Valid ------------
-DO_AA <= ram1_dout;
-pr_dout: process(clk) is
+DO_AA <= ram1_do;
+pr_do: process(clk) is
 begin
     if rising_edge(clk) then
         valid <= di_ez and wr_1st;    
         if (cross = '1') then
             do_zz <= di_az;
         else
-            do_zz <= ram0_dout;
+            do_zz <= ram0_do;
         end if;
         DO_BB <= do_zz;
         DO_VL <= valid;
@@ -310,15 +311,11 @@ end process;
 xRAM0: process(clk) is
 begin
     if (clk'event and clk = '1') then
-        if (rst = '1') then
-            ram0_dout <= (others => '0');
-        else
-            if (rd0 = '1') then
-                ram0_dout <= bram0(conv_integer(addr_rd0));
-            end if;
-        end if;                
+        if (rd0 = '1') then
+            ram0_do <= bram0(conv_integer(addr_rd0));
+        end if;
         if (we0 = '1') then
-            bram0(conv_integer(addr_wr0)) <= ram0_din;
+            bram0(conv_integer(addr_wr0)) <= ram0_di;
         end if;
     end if;    
 end process;
@@ -327,17 +324,13 @@ end process;
 xRAM1: process(clk) is
 begin
     if (clk'event and clk = '1') then
-        if (rst = '1') then
-            ram1_dout <= (others => '0');
-        else
-            if (rd1 = '1') then
-                ram1_dout <= bram1(conv_integer(addr_rd1));
-            end if;
+        if (rd1 = '1') then
+            ram1_do <= bram1(conv_integer(addr_rd1));
         end if;
         if (we1 = '1') then
-            bram1(conv_integer(addr_wr1)) <= ram1_din;
+            bram1(conv_integer(addr_wr1)) <= ram1_di;
         end if;
-    end if;    
+    end if;
 end process;
 
 end int_delay_wrap;
