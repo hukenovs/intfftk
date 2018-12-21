@@ -211,6 +211,7 @@ signal cnt_ena        : std_logic;
 
 signal wr_1st         : std_logic;
 signal wr_1zz         : std_logic;
+signal in_rst         : std_logic;
 
 begin
 
@@ -222,7 +223,7 @@ begin
         if (rst = '1') then
             wr_1st <= '0';
         else
-            if (sw_adr(sw_adr'left) = '1') then
+            if ((sw_adr(sw_adr'left) = '1') and (dt_en01 = '1')) then
                 wr_1st <= '1';
             end if;
         end if;
@@ -237,13 +238,20 @@ begin
             sw_cnt <= (0 => '1', others => '0');
             sw_adr <= (others => '0');
 
+            in_rst <= '0';
             in_cnt <= 1;
+            
             WR_MSB <= INC_MSB(0);
             WR_DEL <= INC_DEL(0);
             WR_ADD <= INC_ADD(0);
         else
             if (dt_en01 = '1') then                
-                sw_adr <= sw_adr + '1';
+                if ((sw_inc = '1') and (in_rst = '1')) then
+                    sw_adr <= (others => '0');
+                else
+                    sw_adr <= sw_adr + '1';
+                end if;
+
                 ---- Counter for WR0 / WR1 ----
                 if (sw_cnt(sw_cnt'left) = '1') then
                     sw_cnt <= (0 => '1', others => '0');
@@ -255,8 +263,10 @@ begin
                 if (sw_cnt(sw_cnt'left) = '1') then    
                     if (in_cnt = (ADDR-1)) then
                         in_cnt <= 0;
+                        in_rst <= '1';
                     else
                         in_cnt <= in_cnt + 1;
+                        in_rst <= '0';
                     end if;
                     WR_MSB <= INC_MSB(in_cnt);
                     WR_DEL <= INC_DEL(in_cnt);
@@ -403,6 +413,7 @@ xTDP_RAM0: entity work.ramb_tdp_rw
         b_dout  => ram0_dob
     );
 
+------------ RAM 1 Component ------------
 xTDP_RAM1: entity work.ramb_tdp_rw
     generic map (
         DATA    => DATA,
