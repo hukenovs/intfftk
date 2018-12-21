@@ -232,10 +232,8 @@ begin
         di_ez <= di_en;
         if (rst = '1') then 
             cnt_adr <= (others => '0');
-        else
-            if (di_en = '1') then
-                cnt_adr <= cnt_adr + '1';
-            end if;
+        elsif (di_en = '1') then
+             cnt_adr <= cnt_adr + '1';
         end if;
     end if;
 end process;
@@ -250,7 +248,6 @@ begin
         if (rst = '1') then
             wr_1st <= '0';
         else
-            -- if (cnt_adr(N_INV) = '1') then
             if ((cnt_adr(N_INV) = '1') and (di_en = '1')) then
                 wr_1st <= '1';
             end if;

@@ -198,173 +198,218 @@ end int_delay_line;
 
 architecture int_delay_line of int_delay_line is 
 
-CONSTANT N_INV       : integer:=NFFT-STAGE-2; 
-
----------------- Switch / Counter / Delays ----------------
-signal cross         : std_logic;
-signal cnt_adr       : std_logic_vector(N_INV downto 0);
-signal cnt_ptr       : std_logic_vector(N_INV-1 downto 0);
-signal cnt_del       : std_logic_vector(N_INV-1 downto 0); 
-
----------------- Ram 0/1 arrays ----------------
-type ram_t is array(0 to 2**(N_INV)-1) of std_logic_vector(NWIDTH-1 downto 0);  
-signal bram0         : ram_t;
-signal bram1         : ram_t;  
-
-signal ram0_di       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram0_do       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram1_di       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-signal ram1_do       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
-
-signal add0_rd       : std_logic_vector(N_INV-1 downto 0);
-signal add1_rd       : std_logic_vector(N_INV-1 downto 0);
-signal add0_wr       : std_logic_vector(N_INV-1 downto 0);
-signal add1_wr       : std_logic_vector(N_INV-1 downto 0);
-
-signal ram0_rd       : std_logic;
-signal ram1_rd       : std_logic;
-signal ram0_we       : std_logic;
-signal ram1_we       : std_logic;
-
----------------- Common signals ----------------
-signal ram_we        : std_logic;
-
-signal cnt_trd       : std_logic_vector(N_INV downto 0);
-signal cnt_twr       : std_logic_vector(N_INV downto 0);
-signal cnt_ena       : std_logic;    
-
-signal di_az         : std_logic_vector(NWIDTH-1 downto 0);
+CONSTANT N_INV  : integer:=NFFT-STAGE-2; 
 
 begin
 
----- Common processes for delay lines ----
-pr_cnt_adr: process(clk) is
+xZERO: if (N_INV = 0) generate
+    signal cross    : std_logic;
+    signal di_bz    : std_logic_vector(NWIDTH-1 downto 0);
+    signal di_az    : std_logic_vector(NWIDTH-1 downto 0);
+    signal di_ez    : std_logic;
 begin
-    if rising_edge(clk) then
-        if (rst = '1') then 
-            cnt_adr <= (others => '0');
-        else
-            if (di_en = '1') then
+    pr_cnt: process(clk) is
+    begin
+        if rising_edge(clk) then
+            if (rst = '1') then 
+                cross <= '0';
+            elsif (di_en = '1') then
+                cross <= not cross;
+            end if; 
+        end if;
+    end process;    
+
+    pr_din: process(clk) is
+    begin
+        if rising_edge(clk) then
+            ---- Cross A-line ----
+            if (cross = '1') then
+                di_az <= di_bz; 
+            else
+                di_az <= di_aa;
+            end if;
+            ---- Cross B-line ----
+            if (cross = '1') then
+                do_bb <= di_aa;
+            else
+                do_bb <= di_bz;
+            end if;        
+        end if;
+    end process; 
+
+    pr_out: process(clk) is
+    begin
+        if rising_edge(clk) then
+            do_aa <= di_az;
+            do_vl <= di_ez;
+
+            di_bz <= di_bb;
+            di_ez <= di_en;
+        end if;
+    end process; 
+end generate;
+
+xSTAGES: if (N_INV > 0) generate
+
+    ---------------- Switch / Counter / Delays ----------------
+    signal cross         : std_logic;
+    signal cnt_adr       : std_logic_vector(N_INV downto 0);
+    signal cnt_ptr       : std_logic_vector(N_INV-1 downto 0);
+    signal cnt_del       : std_logic_vector(N_INV-1 downto 0); 
+
+    ---------------- Ram 0/1 arrays ----------------
+    type ram_t is array(0 to 2**(N_INV)-1) of std_logic_vector(NWIDTH-1 downto 0);  
+    signal bram0         : ram_t;
+    signal bram1         : ram_t;  
+
+    signal ram0_di       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+    signal ram0_do       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+    signal ram1_di       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+    signal ram1_do       : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
+
+    signal add0_rd       : std_logic_vector(N_INV-1 downto 0);
+    signal add1_rd       : std_logic_vector(N_INV-1 downto 0);
+    signal add0_wr       : std_logic_vector(N_INV-1 downto 0);
+    signal add1_wr       : std_logic_vector(N_INV-1 downto 0);
+
+    signal ram0_rd       : std_logic;
+    signal ram1_rd       : std_logic;
+    signal ram0_we       : std_logic;
+    signal ram1_we       : std_logic;
+
+    ---------------- Common signals ----------------
+    signal ram_we        : std_logic;
+
+    signal cnt_trd       : std_logic_vector(N_INV downto 0);
+    signal cnt_twr       : std_logic_vector(N_INV downto 0);
+    signal cnt_ena       : std_logic;    
+
+    signal di_az         : std_logic_vector(NWIDTH-1 downto 0);
+
+begin
+    ---- Common processes for delay lines ----
+    pr_cnt_adr: process(clk) is
+    begin
+        if rising_edge(clk) then
+            if (rst = '1') then 
+                cnt_adr <= (others => '0');
+            elsif (di_en = '1') then
                 cnt_adr <= cnt_adr + '1';
             end if;
         end if;
-    end if;
-end process;
+    end process;
 
-pr_cnt_ptr: process(clk) is
-begin
-    if rising_edge(clk) then
-        if (rst = '1') then 
-            cnt_ptr <= (others => '0');
-        else
-            if (cnt_ena = '1') then
+    pr_cnt_ptr: process(clk) is
+    begin
+        if rising_edge(clk) then
+            if (rst = '1') then 
+                cnt_ptr <= (others => '0');
+            elsif (cnt_ena = '1') then
                 cnt_ptr <= cnt_ptr + '1';
             end if;
         end if;
-    end if;
-end process;
+    end process;
 
-di_az <= di_aa when rising_edge(clk);
-
----- Cross-commutation ----
-pr_di: process(clk) is
-begin
-    if rising_edge(clk) then
-        if (cross = '1') then
-            ram1_di <= ram0_do;
-        else
-            ram1_di <= di_az;
-        end if;
-        if (cross = '1') then
-            do_bb <= di_az;
-        else
-            do_bb <= ram0_do;
-        end if;
-        do_aa <= ram1_do;
-    end if;
-end process;
-cross <= cnt_adr(N_INV) when rising_edge(clk);   
-
----- Cross-commutation counter (read / write) ----
-pr_cnd: process(clk) is
-begin
-    if rising_edge(clk) then
-        if (rst = '1') then 
-            cnt_trd <= (0 => '1', others => '0');
-            cnt_twr <= (0 => '1', others => '0');
-            cnt_ena <= '0';
-        else
-            ---- @write data ----
-            if (cnt_trd(N_INV) = '1') then
-                cnt_trd <= (0 => '1', others => '0');
-            else 
-                if (di_en = '1') then
-                    cnt_trd <= cnt_trd + '1';
-                end if;    
-            end if;                
-            ---- delayed data enable ----
-            if (cnt_trd(N_INV) = '1') then
-                cnt_ena <= '1';
-            elsif (cnt_twr(N_INV) = '1') then
-                cnt_ena <= '0';
+    di_az <= di_aa when rising_edge(clk);
+    ---- Cross-commutation ----
+    pr_di: process(clk) is
+    begin
+        if rising_edge(clk) then
+            if (cross = '1') then
+                ram1_di <= ram0_do;
+            else
+                ram1_di <= di_az;
             end if;
-            ---- @read data ----
-            if (cnt_twr(N_INV) = '1') then
+            if (cross = '1') then
+                do_bb <= di_az;
+            else
+                do_bb <= ram0_do;
+            end if;
+        end if;
+    end process;
+    cross <= cnt_adr(N_INV) when rising_edge(clk);   
+
+    ---- Cross-commutation counter (read / write) ----
+    pr_cnd: process(clk) is
+    begin
+        if rising_edge(clk) then
+            if (rst = '1') then 
+                cnt_trd <= (0 => '1', others => '0');
                 cnt_twr <= (0 => '1', others => '0');
-            else 
-                if (cnt_ena = '1') then
-                    cnt_twr <= cnt_twr + '1';
+                cnt_ena <= '0';
+            else
+                ---- @write data ----
+                if (cnt_trd(N_INV) = '1') then
+                    cnt_trd <= (0 => '1', others => '0');
+                else 
+                    if (di_en = '1') then
+                        cnt_trd <= cnt_trd + '1';
+                    end if;    
+                end if;                
+                ---- delayed data enable ----
+                if (cnt_trd(N_INV) = '1') then
+                    cnt_ena <= '1';
+                elsif (cnt_twr(N_INV) = '1') then
+                    cnt_ena <= '0';
+                end if;
+                ---- @read data ----
+                if (cnt_twr(N_INV) = '1') then
+                    cnt_twr <= (0 => '1', others => '0');
+                else 
+                    if (cnt_ena = '1') then
+                        cnt_twr <= cnt_twr + '1';
+                    end if;
                 end if;
             end if;
         end if;
-    end if;
-end process;
+    end process;
 
+    ram0_di <= di_bb;
 
-ram0_di <= di_bb;
+    ---- RAM Write enable ----
+    ram_we <= di_en when rising_edge(clk);
+    ram1_we <= ram_we when rising_edge(clk);
+    ram0_we <= di_en;
 
----- RAM Read enable ----
-ram0_rd <= cnt_ena;
-ram1_rd <= cnt_ena when rising_edge(clk);
+    ---- Address write ----
+    cnt_del <= cnt_adr(N_INV-1 downto 0) when rising_edge(clk);
+    add1_wr <= cnt_del when rising_edge(clk);
+    add0_wr <= cnt_adr(N_INV-1 downto 0);
 
----- RAM Write enable ----
-ram_we <= di_en when rising_edge(clk);
-ram1_we <= ram_we when rising_edge(clk);
-ram0_we <= di_en;
+    ---- RAM Read enable ----
+    ram1_rd <= cnt_ena when rising_edge(clk);
+    add1_rd <= cnt_ptr when rising_edge(clk);
+    
+    ram0_rd <= cnt_ena;
+    add0_rd <= cnt_ptr;
 
----- Address write ----
-cnt_del <= cnt_adr(N_INV-1 downto 0) when rising_edge(clk);
-add1_wr <= cnt_del when rising_edge(clk);
-add0_wr <= cnt_adr(N_INV-1 downto 0);
-
----- Address read ----
-add1_rd <= cnt_ptr;
-add0_rd <= cnt_ptr;
-
------------- First RAMB delay line ------------ 
-xRAM0: process(clk) is
-begin
-    if (clk'event and clk = '1') then
-        if (ram0_rd = '1') then
-            ram0_do <= bram0(conv_integer(add0_rd)); -- dual port
+    do_aa <= ram1_do;
+    do_vl <= ram1_rd when rising_edge(clk);
+    ------------ First RAMB delay line ------------ 
+    xRAM0: process(clk) is
+    begin
+        if (clk'event and clk = '1') then
+            if (ram0_we = '1') then
+                bram0(conv_integer(add0_wr)) <= ram0_di;
+            end if;           
+            if (ram0_rd = '1') then
+                ram0_do <= bram0(conv_integer(add0_rd)); -- dual port
+            end if;
         end if;
-        if (ram0_we = '1') then
-            bram0(conv_integer(add0_wr)) <= ram0_di;
-        end if;
-    end if;
-end process;
+    end process;
 
------------- Second RAMB delay line ------------
-xRAM1: process(clk) is
-begin
-    if (clk'event and clk = '1') then
-        if (ram1_rd = '1') then
-            ram1_do <= bram1(conv_integer(add1_rd)); -- dual port
+    ------------ Second RAMB delay line ------------
+    xRAM1: process(clk) is
+    begin
+        if (clk'event and clk = '1') then
+            if (ram1_we = '1') then
+                bram1(conv_integer(add1_wr)) <= ram1_di;
+            end if;            
+            if (ram1_rd = '1') then
+                ram1_do <= bram1(conv_integer(add1_rd)); -- dual port
+            end if;
         end if;
-        if (ram1_we = '1') then
-            bram1(conv_integer(add1_wr)) <= ram1_di;
-        end if;
-    end if;
-end process;
+    end process;
+end generate;
 
 end int_delay_line;
