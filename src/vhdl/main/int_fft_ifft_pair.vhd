@@ -261,7 +261,7 @@ xIFFT: entity work.int_ifftNk
         FORMAT        => FORMAT,
         RNDMODE       => RNDMODE,
         RAMB_TYPE     => RAMB_TYPE,
-        DATA_WIDTH    => DATA_WIDTH+NFFT,
+        DATA_WIDTH    => DATA_WIDTH+FORMAT*NFFT,
         TWDL_WIDTH    => TWDL_WIDTH,
         XSER          => XSERIES,
         USE_MLT       => USE_MLT
@@ -280,7 +280,7 @@ xIFFT: entity work.int_ifftNk
         DO_RE1        => fo_re1,
         DO_IM1        => fo_im1,
         DO_VAL        => fo_val,
-        
+
         RST           => rstp, 
         CLK           => clk
     );
@@ -304,6 +304,7 @@ xCONT_OUT: if (RAMB_TYPE = "CONT") generate
             dt_int0    => dt_int0,
             dt_int1    => dt_int1,
             dt_en01    => dt_en01,
+
             dt_rev0    => open,
             dt_rev1    => open,
             dt_vl01    => open
@@ -313,7 +314,7 @@ end generate;
 xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
     xSHL_OUT: entity work.iobuf_wrap_int2
         generic map (
-            BITREV      => FALSE,
+            BITREV      => TRUE,
             ADDR        => NFFT,
             DATA        => 2*(FORMAT*2*NFFT+DATA_WIDTH)
         )    
@@ -324,6 +325,7 @@ xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
             dt_int0     => dt_int0,
             dt_int1     => dt_int1,
             dt_en01     => dt_en01,
+
             dt_rev0     => open,
             dt_rev1     => open,
             dt_vl01     => open
@@ -349,6 +351,20 @@ xOUT_BUF : entity work.outbuf_half_path
 
         do_dt       => qx_dt,
         do_en       => dx_en    
+    );
+
+xOUT_2 : entity work.outbuf_half_wrap
+    generic map (
+        ADDR        => NFFT,
+        DATA        => 1*(FORMAT*2*NFFT+DATA_WIDTH)
+    )
+    port map (
+        clk         => clk,
+        reset       => rstp,
+
+        da_dt       => fo_re0,
+        db_dt       => fo_re1,
+        ab_vl       => fo_val 
     );
 
 do_re(FORMAT*2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*2*NFFT+DATA_WIDTH));

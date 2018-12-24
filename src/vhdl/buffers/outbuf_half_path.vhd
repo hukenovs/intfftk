@@ -102,11 +102,9 @@ signal ram_rdad      : std_logic_vector(ADDR-2 downto 0);
 signal ram_doa       : std_logic_vector(DATA-1 downto 0);
 signal da_dtz1       : std_logic_vector(DATA-1 downto 0);
 
-signal ram_vl        : std_logic;
-
 -- Shared mem signal
-type mem_type is array ((2**(ADDR-1))-1 downto 0) of std_logic_vector(DATA-1 downto 0);
-shared variable mem : mem_type:=(others => (others => '0'));
+type mem_type is array (0 to (2**(ADDR-1))-1) of std_logic_vector(DATA-1 downto 0);
+signal mem : mem_type;
 
 begin
 
@@ -125,14 +123,14 @@ begin
             if (ab_vl = '1') then
                 if (cnt(cnt'left) = '1') then
                     cnt <= (0 => '1', others => '0');
-                else                
+                else
                     cnt <= cnt + '1';
                 end if;
             end if;    
             
             if (ab_vl = '1') then
                 addr_wr <= addr_wr + '1';
-            end if;                
+            end if;
 
             if (ena_rd = '1') then
                 if (cnt_rd(cnt_rd'left) = '1') then
@@ -163,7 +161,7 @@ pr_data: process(clk) is
 begin
     if rising_edge(clk) then
         -- if (ram_wea = '1') then
-        if (ena_rdz = '0') then    
+        if (ena_rdz = '0') then
             do_dt <= da_dtz1;
             do_en <= ram_wea;
         else
@@ -183,7 +181,7 @@ begin
             ram_doa <= mem(conv_integer(ram_rdad));
         end if;
         if (ab_vl = '1') then
-            mem(conv_integer(addr_wr)) := db_dt;
+            mem(conv_integer(addr_wr)) <= db_dt;
         end if;
     end if;
 end process;

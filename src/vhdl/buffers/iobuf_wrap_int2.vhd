@@ -245,8 +245,8 @@ begin
             WR_DEL <= INC_DEL(0);
             WR_ADD <= INC_ADD(0);
         else
-            if (dt_en01 = '1') then                
-                if ((sw_inc = '1') and (in_rst = '1')) then
+            if (dt_en01 = '1') then
+                if ((sw_cnt(sw_cnt'left) = '1') and (in_rst = '1')) then
                     sw_adr <= (others => '0');
                 else
                     sw_adr <= sw_adr + '1';
@@ -257,10 +257,10 @@ begin
                     sw_cnt <= (0 => '1', others => '0');
                 else
                     sw_cnt <= sw_cnt + '1';
-                end if;                    
+                end if;
 
                 ---- Counter for Arrays ----
-                if (sw_cnt(sw_cnt'left) = '1') then    
+                if (sw_cnt(sw_cnt'left) = '1') then
                     if (in_cnt = (ADDR-1)) then
                         in_cnt <= 0;
                         in_rst <= '1';
@@ -310,7 +310,7 @@ begin
             end if;    
 
             ---- Find adress counter ----
-            if (dt_ena = '1') then        
+            if (dt_ena = '1') then
                 if (sw_inc = '1') then
                     cnt_wr0 <= (others => '0');
                     cnt_wr1 <= WR_DEL;
@@ -323,8 +323,8 @@ begin
                         cnt_wr0 <= cnt_wr0 + WR_INZ;
                         cnt_wr1 <= cnt_wr1 + WR_INZ;
                     end if;
-                end if;    
-            end if;            
+                end if;
+            end if;
 
             ---- Find increment mux ----
             -- if (dt_en01 = '1') then

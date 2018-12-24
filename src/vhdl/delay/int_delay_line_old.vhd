@@ -143,7 +143,7 @@
 --  Version 3, 29 June 2007         
 --
 --  Copyright (c) 2018 Kapitanov Alexander
---                                                                   
+--
 --  This program is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation, either version 3 of the License, or
@@ -160,7 +160,7 @@
 --  PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM 
 --  IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF 
 --  ALL NECESSARY SERVICING, REPAIR OR CORRECTION. 
---                                                      
+--
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 
@@ -194,9 +194,9 @@ CONSTANT N_INV       : integer:=NFFT-STAGE-2;
 
 signal di_enz        : std_logic;
 
-signal cross         : std_logic:='0';
+signal cross         : std_logic;
 signal cnt_wrcr      : std_logic_vector(N_INV downto 0);
-signal do_aa_e       : std_logic_vector(NWIDTH-1 downto 0);    
+signal do_aa_e       : std_logic_vector(NWIDTH-1 downto 0);
 signal do_bb_e       : std_logic_vector(NWIDTH-1 downto 0);
 
 signal ram0_din      : std_logic_vector(NWIDTH-1 downto 0):=(others => '0');
@@ -260,7 +260,7 @@ begin
     end generate;
     
     -- RAMB delay line 0 -- 
-    GEN_LOW1: if (N_INV = 0 ) generate    
+    GEN_LOW1: if (N_INV = 0 ) generate
         ram0_dout <= ram0_din;
         ram1_dout <= ram1_din;
     end generate;
@@ -280,47 +280,47 @@ begin
             end if;
         end if;
     end process; 
-    
+
     do_bb <= do_bb_e;
 end generate; 
 
 G_DEL_LONG: if (N_INV >= 9) generate
-    
+
     signal cnt_wr      : std_logic_vector(N_INV-1 downto 0);    
     
     signal addrs       : std_logic_vector(N_INV-1 downto 0); 
     signal addrs1      : std_logic_vector(N_INV-1 downto 0);
     signal addrz       : std_logic_vector(N_INV-1 downto 0); 
     signal addrz1      : std_logic_vector(N_INV-1 downto 0);
-    
+
     signal dir_aa      : std_logic_vector(NWIDTH-1 downto 0);
-  
-    signal do_bb_z     : std_logic_vector(NWIDTH-1 downto 0);        
+
+    signal do_bb_z     : std_logic_vector(NWIDTH-1 downto 0);
     signal del_o       : std_logic;
 
-    signal we          : std_logic:='0';
-    signal wes         : std_logic:='0';
-    signal wes1        : std_logic:='0';
-    signal wez         : std_logic:='0';
-    signal wez1        : std_logic:='0';
-    signal do_vlid     : std_logic:='0';
+    signal we          : std_logic;
+    signal wes         : std_logic;
+    signal wes1        : std_logic;
+    signal wez         : std_logic;
+    signal wez1        : std_logic;
+    signal do_vlid     : std_logic;
     
     signal rw_del      : std_logic;
-    signal cnt_trd     : std_logic_vector(NFFT-2-stage downto 0);    
-    signal cnt_twr     : std_logic_vector(NFFT-2-stage downto 0);        
+    signal cnt_trd     : std_logic_vector(NFFT-2-stage downto 0);
+    signal cnt_twr     : std_logic_vector(NFFT-2-stage downto 0);
     signal cnt_ena     : std_logic;    
+
+    signal di_aa_ze    : std_logic_vector(NWIDTH-1 downto 0); 
 
     type ram_t is array(0 to 2**(N_INV)-1) of std_logic_vector(NWIDTH-1 downto 0);  
     signal bram0       : ram_t;
-    signal bram1       : ram_t;    
+    signal bram1       : ram_t;
 
     --attribute ram_style    : string;
     --attribute ram_style of bram0    : signal is "block";
     --attribute ram_style of bram1    : signal is "block";   
-    signal di_aa_ze     : std_logic_vector(NWIDTH-1 downto 0);
-    
+
 begin
-    
     pr_cnd: process(clk) is
     begin
         if rising_edge(clk) then
@@ -350,7 +350,7 @@ begin
                     if (cnt_ena = '1') then
                         cnt_twr <= cnt_twr + '1';
                     end if;    
-                end if;                
+                end if;
             end if;
         end if;
     end process;    
@@ -412,14 +412,14 @@ begin
         if (clk'event and clk = '1') then
             if (del_o = '1') then
                 ram0_dout <= bram0(conv_integer(cnt_wr)); -- dual port
-            end if;              
+            end if;
             if (we = '1') then
                 bram0(conv_integer(cnt_wrcr(N_INV-1 downto 0))) <= ram0_din;
             end if;
         end if;    
     end process;
     
-    -- Second RAMB delay line --                
+    -- Second RAMB delay line --
     RAM1: process(clk) is
     begin
         if (clk'event and clk = '1') then
