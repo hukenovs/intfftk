@@ -18,7 +18,7 @@
 --       "CONT" - data valid must be continuous (strobe length = N/2 points);
 --
 --   FLY_FWD        - (s) - Use butterflies into Forward FFT: 1 - TRUE, 0 - FALSE
---   FLY_INV        - (s) - Use butterflies into Inverse FFT: 1 - TRUE, 0 - FALSE            
+--   FLY_INV        - (s) - Use butterflies into Inverse FFT: 1 - TRUE, 0 - FALSE
 --   XSERIES        - (p) - FPGA Series: 
 --       "NEW" - ULTRASCALE,
 --       "OLD" - 6/7-SERIES;
@@ -43,7 +43,7 @@
 --  Version 3, 29 June 2007
 --
 --  Copyright (c) 2018 Kapitanov Alexander
---                                                                   
+--
 --  This program is free software: you can redistribute it and/or modify
 --  it under the terms of the GNU General Public License as published by
 --  the Free Software Foundation, either version 3 of the License, or
@@ -89,24 +89,26 @@ entity int_fft_ifft_pair is
         RESET        : in  std_logic;    --! Global reset
         CLK          : in  std_logic;    --! DSP clock
         ---- Butterflies ----
-        FLY_FWD      : in  std_logic;    --! Forward: '1' - use BFLY, '0' -don't use
-        FLY_INV      : in  std_logic;    --! Inverse: '1' - use BFLY, '0' -don't use
+        FLY_FWD      : in  std_logic;    --! Forward: '1' - use BFLY, '0' - don't use BFLY
+        FLY_INV      : in  std_logic;    --! Inverse: '1' - use BFLY, '0' - don't use BFLY
         ---- Input data ----
         D0_RE        : in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Real: 1'st data part [0:N/2)
         D1_RE        : in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Real: 2'nd data part [N/2:N)
         D0_IM        : in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Imag: 1'st data part [0:N/2)
-        D1_IM        : in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Imag: 2'nd data part [N/2:N)    
+        D1_IM        : in  std_logic_vector(DATA_WIDTH-1 downto 0); --! Imag: 2'nd data part [N/2:N)
         DI_EN        : in  std_logic;  --! Data enable strobe (valid)
         ---- Output data ----
-        DO_RE        : out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output data Even
-        DO_IM        : out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output data Odd
-        DO_VL        : out std_logic  --! Output valid data
+        Q0_RE        : out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output Real: 1'st data part [0:N/2)
+        Q1_RE        : out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output Real: 2'nd data part [N/2:N)
+        Q0_IM        : out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output Imag: 1'st data part [0:N/2)
+        Q1_IM        : out std_logic_vector(DATA_WIDTH+FORMAT*2*NFFT-1 downto 0); --! Output Imag: 2'nd data part [N/2:N) 
+        QO_VL        : out std_logic  --! Output valid data
     );
 end int_fft_ifft_pair;
 
 architecture int_fft_ifft_pair of int_fft_ifft_pair is   
 
-signal rstp      : std_logic;
+signal reset      : std_logic;
 
 ---------------- Input data ----------------
 signal di_d0     : std_logic_vector(2*DATA_WIDTH-1 downto 0);
@@ -145,17 +147,14 @@ signal fo_val    : std_logic;
 ---------------- Shuffle data ----------------
 signal dt_int0   : std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);    
 signal dt_int1   : std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);    
-signal dt_en01   : std_logic;     
+signal dt_en01   : std_logic;
 
-signal qx_dt     : std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);
 ---------------- Output data ----------------
-signal dx_re     : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
-signal dx_im     : std_logic_vector(FORMAT*2*NFFT+DATA_WIDTH-1 downto 0);
-signal dx_en     : std_logic;
+signal dt_rev0   : std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);    
+signal dt_rev1   : std_logic_vector(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0);    
+signal dt_vl01   : std_logic;
 
 begin
-
-rstp <= not reset after td when rising_edge(clk);
 
 di_d0 <= D0_IM & D0_RE;
 di_d1 <= D1_IM & D1_RE;
@@ -170,7 +169,7 @@ xCONT_IN: if (RAMB_TYPE = "CONT") generate
         )    
         port map (
             clk        => clk,
-            rst        => rstp,
+            rst        => reset,
 
             dt_int0    => di_d0,
             dt_int1    => di_d1,
@@ -191,7 +190,7 @@ xWRAP_IN: if (RAMB_TYPE = "WRAP") generate
         )    
         port map (
             clk        => clk,
-            rst        => rstp,
+            rst        => reset,
 
             dt_int0    => di_d0,
             dt_int1    => di_d1,
@@ -237,7 +236,7 @@ xFFT: entity work.int_fftNk
         DO_IM1        => do_im1,
         DO_VAL        => do_val,
 
-        RST           => rstp, 
+        RST           => reset, 
         CLK           => clk
     );
 
@@ -281,7 +280,7 @@ xIFFT: entity work.int_ifftNk
         DO_IM1        => fo_im1,
         DO_VAL        => fo_val,
 
-        RST           => rstp, 
+        RST           => reset, 
         CLK           => clk
     );
 
@@ -299,15 +298,15 @@ xCONT_OUT: if (RAMB_TYPE = "CONT") generate
         )
         port map (
             clk        => clk,
-            rst        => rstp,
+            rst        => reset,
 
             dt_int0    => dt_int0,
             dt_int1    => dt_int1,
             dt_en01    => dt_en01,
 
-            dt_rev0    => open,
-            dt_rev1    => open,
-            dt_vl01    => open
+            dt_rev0    => dt_rev0,
+            dt_rev1    => dt_rev1,
+            dt_vl01    => dt_vl01
         );
 end generate;
 
@@ -320,56 +319,22 @@ xWRAP_OUT: if (RAMB_TYPE = "WRAP") generate
         )    
         port map (
             clk         => clk,
-            rst         => rstp,
+            rst         => reset,
 
             dt_int0     => dt_int0,
             dt_int1     => dt_int1,
             dt_en01     => dt_en01,
 
-            dt_rev0     => open,
-            dt_rev1     => open,
-            dt_vl01     => open
+            dt_rev0     => dt_rev0,
+            dt_rev1     => dt_rev1,
+            dt_vl01     => dt_vl01
         );
 end generate;
 
--------------------------------------------------------
--------------------- FOT TESTS ONLY -------------------
--------------------------------------------------------
-
-xOUT_BUF : entity work.outbuf_half_path
-    generic map (
-        ADDR        => NFFT,
-        DATA        => 2*(FORMAT*2*NFFT+DATA_WIDTH)
-    )
-    port map (
-        clk         => clk,
-        reset       => rstp,
-
-        da_dt       => dt_int0,
-        db_dt       => dt_int1,
-        ab_vl       => dt_en01,
-
-        do_dt       => qx_dt,
-        do_en       => dx_en    
-    );
-
-xOUT_2 : entity work.outbuf_half_wrap
-    generic map (
-        ADDR        => NFFT,
-        DATA        => 1*(FORMAT*2*NFFT+DATA_WIDTH)
-    )
-    port map (
-        clk         => clk,
-        reset       => rstp,
-
-        da_dt       => fo_re0,
-        db_dt       => fo_re1,
-        ab_vl       => fo_val 
-    );
-
-do_re(FORMAT*2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(1*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*2*NFFT+DATA_WIDTH));
-do_im(FORMAT*2*NFFT+DATA_WIDTH-1 downto 00) <= qx_dt(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*2*NFFT+DATA_WIDTH));
-
-do_vl <= dx_en;
+Q0_RE <= dt_rev0(1*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*2*NFFT+DATA_WIDTH));
+Q1_RE <= dt_rev1(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*2*NFFT+DATA_WIDTH));
+Q0_IM <= dt_rev0(1*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 0*(FORMAT*2*NFFT+DATA_WIDTH));
+Q1_IM <= dt_rev1(2*(FORMAT*2*NFFT+DATA_WIDTH)-1 downto 1*(FORMAT*2*NFFT+DATA_WIDTH));
+QO_VL <= dt_vl01;
 
 end int_fft_ifft_pair;
