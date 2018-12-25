@@ -108,8 +108,6 @@ end int_fft_ifft_pair;
 
 architecture int_fft_ifft_pair of int_fft_ifft_pair is   
 
-signal reset      : std_logic;
-
 ---------------- Input data ----------------
 signal di_d0     : std_logic_vector(2*DATA_WIDTH-1 downto 0);
 signal di_d1     : std_logic_vector(2*DATA_WIDTH-1 downto 0);

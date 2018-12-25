@@ -80,7 +80,7 @@ architecture fft_double_test of fft_double_test is
 -- **************************************************************** --
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
-constant  NFFT        : integer:=10; -- Number of stages = log2(FFT LENGTH)
+constant  NFFT        : integer:=7; -- Number of stages = log2(FFT LENGTH)
 constant  FORMAT      : integer:=1;  -- 1 - Use Unscaled mode / 0 - Scaled (truncate) mode
 constant  RNDMODE     : integer:=1;  -- 1 - Rounding (round), 0 - Truncate (floor)
 
@@ -98,30 +98,24 @@ constant  RAMB_TYPE   : string:="WRAP"; -- Cross-commutation type: WRAP / CONT
 -- **************************************************************** --
 -- ********* Signal declaration: clocks, reset, data etc. ********* --
 -- **************************************************************** --
-
-signal clk            : std_logic:='0';
-signal reset          : std_logic:='0';
-signal start          : std_logic:='0';
+signal clk          : std_logic:='0';
+signal reset        : std_logic:='0';
+signal start        : std_logic:='0';
 
 ------------------------ Input data --------------------    
-signal d0_re          : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
-signal d1_re          : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
-signal d0_im          : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
-signal d1_im          : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
-signal di_en          : std_logic:='0';
+signal d0_re        : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
+signal d1_re        : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
+signal d0_im        : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
+signal d1_im        : std_logic_vector(DATA_WIDTH-1 downto 0):=(others=>'0'); 
+signal di_en        : std_logic:='0';
 
 ------------------------ Output data --------------------  
-signal d0_re_wrap     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal d0_im_wrap     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal d1_re_wrap     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal d1_im_wrap     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal do_vl_wrap     : std_logic;
+signal q0_re        : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal q1_re        : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal q0_im        : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal q1_im        : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
+signal qo_vl        : std_logic;
 
-signal d0_re_cont     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal d0_im_cont     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal d1_re_cont     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal d1_im_cont     : std_logic_vector(2*FORMAT*NFFT+DATA_WIDTH-1 downto 0);
-signal do_vl_cont     : std_logic;
 
 begin
 
@@ -165,10 +159,12 @@ begin
                 d1_re <= conv_std_logic_vector( lt2, DATA_WIDTH );
                 d0_im <= conv_std_logic_vector( lt3, DATA_WIDTH );
                 d1_im <= conv_std_logic_vector( lt4, DATA_WIDTH );
-                di_en <= '1'; 
+                di_en <= '1';
 
-                wait until rising_edge(clk);
-                di_en <= '0';
+                if (RAMB_TYPE = "WRAP") then
+                    wait until rising_edge(clk);
+                    di_en <= '0';
+                end if;
             end loop;
 
             wait until rising_edge(clk);
@@ -202,50 +198,39 @@ end process;
 
 ------------------------------------------------
 wr_dout: process(clk) is -- write file_io.out (++ done goes to '1')
-    file llog0         : TEXT open WRITE_MODE is "../../../../../math/dout_un_wrap.dat";
-    file llog1         : TEXT open WRITE_MODE is "../../../../../math/dout_un_cont.dat";
-    file llog2         : TEXT open WRITE_MODE is "../../../../../math/dout_sc_wrap.dat";
-    file llog3         : TEXT open WRITE_MODE is "../../../../../math/dout_sc_cont.dat";
-    variable str0      : LINE;
-    variable str1      : LINE;
-    variable str2      : LINE;
-    variable str3      : LINE;
-    variable spc       : string(1 to 4) := (others => ' ');    
+    file fin_log    : TEXT open WRITE_MODE is "../../../../../math/dout_pair.dat";
+    variable stx    : LINE;
+    variable spc    : string(1 to 4) := (others => ' ');    
 begin
     if rising_edge(clk) then
-        ---- Unscaled data output ----
-        -- Burst mode --
-        --if (do_vl_wrap = '1') then
-        --    write(str0, CONV_INTEGER(do_re_wrap(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
-        --    write(str0, spc);
-        --    write(str0, CONV_INTEGER(do_im_wrap(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
-        --    writeline(llog0, str0);
-        --end if;
-        ---- Continuous --
-        --if (do_vl_cont = '1') then
-        --    write(str1, CONV_INTEGER(do_re_cont(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
-        --    write(str1, spc);
-        --    write(str1, CONV_INTEGER(do_im_cont(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
-        --    writeline(llog1, str1);
-        --end if;
+        if (do_vl_wrap = '1') then
+            write(stx, CONV_INTEGER(q0_re(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+            write(stx, spc);
+            write(stx, CONV_INTEGER(q1_re(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+            write(stx, spc);
+            write(stx, CONV_INTEGER(q0_im(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+            write(stx, spc);
+            write(stx, CONV_INTEGER(q1_im(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
+            writeline(fin_log, stx);
+        end if;
     end if;
 end process;
 
 ------------------------------------------------
-UUT_WRAP: entity work.int_fft_ifft_pair
+UUT_PAIR: entity work.int_fft_ifft_pair
     generic map ( 
-        RAMB_TYPE    => "WRAP",
+        RAMB_TYPE    => RAMB_TYPE,
         DATA_WIDTH   => DATA_WIDTH,
         TWDL_WIDTH   => TWDL_WIDTH,
         FORMAT       => FORMAT,
         XSERIES      => XSERIES,
         NFFT         => NFFT,
         USE_MLT      => USE_MLT
-    )   
+    )
     port map ( 
         ---- Common signals ----
         RESET        => reset,
-        CLK          => clk,    
+        CLK          => clk,
         ---- Input data ----
         D0_RE        => d0_re,
         D1_RE        => d1_re,
@@ -253,47 +238,14 @@ UUT_WRAP: entity work.int_fft_ifft_pair
         D1_IM        => d1_im,
         DI_EN        => di_en,
         ---- Output data ----
-        Q0_RE        => d0_re_wrap,  
-        Q1_RE        => d1_re_wrap, 
-        Q0_IM        => d0_im_wrap, 
-        Q1_IM        => d1_im_wrap, 
-        QO_VL        => do_vl_wrap,
+        Q0_RE        => q0_re,  
+        Q1_RE        => q1_re, 
+        Q0_IM        => q0_im, 
+        Q1_IM        => q1_im, 
+        QO_VL        => qo_vl,
         ---- Butterflies ----
-        FLY_FWD      => fly_fwd,
-        FLY_INV      => fly_inv
+        FLY_FWD      => FLY_FWD,
+        FLY_INV      => FLY_INV
     );
-
-------------------------------------------------
-UUT_CONT: entity work.int_fft_ifft_pair
-    generic map ( 
-        RAMB_TYPE    => "CONT",
-        DATA_WIDTH   => DATA_WIDTH,
-        TWDL_WIDTH   => TWDL_WIDTH,
-        FORMAT       => FORMAT,
-        XSERIES      => XSERIES,
-        NFFT         => NFFT,
-        USE_MLT      => USE_MLT
-    )   
-    port map ( 
-        ---- Common signals ----
-        RESET        => reset,
-        CLK          => clk,    
-        ---- Input data ----
-        D0_RE        => d0_re,
-        D1_RE        => d1_re,
-        D0_IM        => d0_im,
-        D1_IM        => d1_im,
-        DI_EN        => di_en,
-        ---- Output data ----
-        Q0_RE        => d0_re_cont, 
-        Q1_RE        => d1_re_cont, 
-        Q0_IM        => d0_im_cont, 
-        Q1_IM        => d1_im_cont, 
-        QO_VL        => do_vl_cont,
-        ---- Butterflies ----
-        FLY_FWD      => fly_fwd,
-        FLY_INV      => fly_inv
-    );
-
 ------------------------------------------------
 end fft_double_test;
