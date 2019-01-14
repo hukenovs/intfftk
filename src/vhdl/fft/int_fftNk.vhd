@@ -71,16 +71,16 @@ use ieee.std_logic_1164.all;
 
 entity int_fftNk is
     generic (
-        IS_SIM      : boolean:=FALSE;      --! Simulation model: TRUE / FALSE    
-        NFFT        : integer:=5;          --! Number of FFT stages
-        RAMB_TYPE   : string:="WRAP";      --! Cross-commutation type: WRAP / CONT
-        -- MODE        : string:="UNSCALED";  --! Unscaled, Rounding, Truncate modes
-        FORMAT      : integer:=1;       --! 1 - Uscaled, 0 - Scaled
-        RNDMODE     : integer:=0;       --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)		
-        DATA_WIDTH  : integer:=16;         --! Input data width
-        TWDL_WIDTH  : integer:=16;         --! Twiddle factor data width    
-        XSER        : string:="OLD";       --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
-        USE_MLT     : boolean:=FALSE       --! Use multipliers in Twiddle factors
+        IS_SIM      : boolean:=FALSE;        --! Simulation model: TRUE / FALSE    
+        NFFT        : integer:=5;            --! Number of FFT stages
+        RAMB_TYPE   : string:="WRAP";        --! Cross-commutation type: WRAP / CONT
+        -- MODE        : string:="UNSCALED"; --! Unscaled, Rounding, Truncate modes
+        FORMAT      : integer:=1;            --! 1 - Uscaled, 0 - Scaled
+        RNDMODE     : integer:=0;            --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)       
+        DATA_WIDTH  : integer:=16;           --! Input data width
+        TWDL_WIDTH  : integer:=16;           --! Twiddle factor data width    
+        XSER        : string:="OLD";         --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
+        USE_MLT     : boolean:=FALSE         --! Use multipliers in Twiddle factors
     );
     port (
         RST         : in  std_logic;   --! Global positive RST 

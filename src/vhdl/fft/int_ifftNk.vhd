@@ -75,7 +75,7 @@ entity int_ifftNk is
         -- MODE        : string:="UNSCALED"; --! Unscaled, Rounding, Truncate modes
         FORMAT      : integer:=1;            --! 1 - Uscaled, 0 - Scaled
         RNDMODE     : integer:=0;            --! 0 - Truncate, 1 - Rounding (FORMAT should be = 1)
-		RAMB_TYPE   : string:="WRAP";        --! Cross-commutation type: WRAP / CONT
+        RAMB_TYPE   : string:="WRAP";        --! Cross-commutation type: WRAP / CONT
         DATA_WIDTH  : integer:=16;           --! Input data width
         TWDL_WIDTH  : integer:=16;           --! Twiddle factor data width    
         XSER        : string:="OLD";         --! FPGA family: for 6/7 series: "OLD"; for ULTRASCALE: "NEW";
