@@ -910,7 +910,7 @@ begin
                 -- Control: Inputs/Status Bits
                 ALUMODE         => "0000",
                 INMODE          => (others=>'0'),
-                OPMODE          => "000110011",
+                OPMODE          => "0110011",
                 -- Carry input data
                 ACIN            => (others=>'0'),
                 BCIN            => (others=>'0'),

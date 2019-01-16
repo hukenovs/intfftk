@@ -125,286 +125,283 @@ begin
     ---- Output data ----
     MP_12 <= dspP_M1;
 
-    ---- Synthesis model ----
-    xSYN: if (IS_SIM = FALSE) generate
-        ---- Wrap DSP48E1 units ----
-        xDSP48E1: if (XSER = "OLD") generate
-            xDSP_M1: DSP48E1
-                generic map (
-                    -- Feature Control Attributes: Data Path Selection
-                    USE_MULT          => "MULTIPLY",
-                    -- Register Control Attributes: Pipeline Register Configuration
-                    ACASCREG          => 1,
-                    ADREG             => 1,
-                    ALUMODEREG        => 1,
-                    AREG              => 2,
-                    BCASCREG          => 1,
-                    BREG              => 2,
-                    CARRYINREG        => 1,
-                    CARRYINSELREG     => 1,
-                    CREG              => 1,
-                    DREG              => 1,
-                    INMODEREG         => 1,
-                    MREG              => 1,
-                    OPMODEREG         => 1,
-                    PREG              => 1 
-                )
-                port map (         
-                    -- Data: input / output data ports
-                    A                 => dspA_M1, -- 30-bit input: A data input
-                    B                 => dspB_M1, -- 18-bit input: B data input
-                    C                 => (others=>'0'),
-                    D                 => (others=>'0'),
-                    P                 => dspP_M1,
-                    PCOUT             => open,
-                    -- Control: Inputs/Status Bits
-                    ALUMODE           => ALUMODE,
-                    INMODE            => (others=>'0'),
-                    OPMODE            => "0010101",
-                    -- Carry input data
-                    ACIN              => (others=>'0'),
-                    BCIN              => (others=>'0'),
-                    PCIN              => dspP_M2,
-                    CARRYINSEL        => (others=>'0'),
-                    CARRYCASCIN       => '0',
-                    CARRYIN           => '0',
-                    MULTSIGNIN        => '0',
-                    -- Clock enables
-                    CEA1              => '1',
-                    CEA2              => '1',
-                    CEAD              => '1',
-                    CEALUMODE         => '1',
-                    CEB1              => '1',
-                    CEB2              => '1',
-                    CEC               => '1',
-                    CECARRYIN         => '1',
-                    CECTRL            => '1',
-                    CED               => '1',
-                    CEINMODE          => '1',
-                    CEM               => '1',
-                    CEP               => '1',
-                    CLK               => CLK,
-                    -- Reset/Clock Enable --
-                    RSTA              => RST,
-                    RSTALLCARRYIN     => RST,
-                    RSTALUMODE        => RST,
-                    RSTB              => RST,
-                    RSTC              => RST,
-                    RSTCTRL           => RST,
-                    RSTD              => RST,
-                    RSTINMODE         => RST,
-                    RSTM              => RST,
-                    RSTP              => RST 
-                );
+    ---- Wrap DSP48E1 units ----
+    xDSP48E1: if (XSER = "OLD") generate
+        xDSP_M1: DSP48E1
+            generic map (
+                -- Feature Control Attributes: Data Path Selection
+                USE_MULT          => "MULTIPLY",
+                -- Register Control Attributes: Pipeline Register Configuration
+                ACASCREG          => 1,
+                ADREG             => 1,
+                ALUMODEREG        => 1,
+                AREG              => 2,
+                BCASCREG          => 1,
+                BREG              => 2,
+                CARRYINREG        => 1,
+                CARRYINSELREG     => 1,
+                CREG              => 1,
+                DREG              => 1,
+                INMODEREG         => 1,
+                MREG              => 1,
+                OPMODEREG         => 1,
+                PREG              => 1 
+            )
+            port map (         
+                -- Data: input / output data ports
+                A                 => dspA_M1, -- 30-bit input: A data input
+                B                 => dspB_M1, -- 18-bit input: B data input
+                C                 => (others=>'0'),
+                D                 => (others=>'0'),
+                P                 => dspP_M1,
+                PCOUT             => open,
+                -- Control: Inputs/Status Bits
+                ALUMODE           => ALUMODE,
+                INMODE            => (others=>'0'),
+                OPMODE            => "0010101",
+                -- Carry input data
+                ACIN              => (others=>'0'),
+                BCIN              => (others=>'0'),
+                PCIN              => dspP_M2,
+                CARRYINSEL        => (others=>'0'),
+                CARRYCASCIN       => '0',
+                CARRYIN           => '0',
+                MULTSIGNIN        => '0',
+                -- Clock enables
+                CEA1              => '1',
+                CEA2              => '1',
+                CEAD              => '1',
+                CEALUMODE         => '1',
+                CEB1              => '1',
+                CEB2              => '1',
+                CEC               => '1',
+                CECARRYIN         => '1',
+                CECTRL            => '1',
+                CED               => '1',
+                CEINMODE          => '1',
+                CEM               => '1',
+                CEP               => '1',
+                CLK               => CLK,
+                -- Reset/Clock Enable --
+                RSTA              => RST,
+                RSTALLCARRYIN     => RST,
+                RSTALUMODE        => RST,
+                RSTB              => RST,
+                RSTC              => RST,
+                RSTCTRL           => RST,
+                RSTD              => RST,
+                RSTINMODE         => RST,
+                RSTM              => RST,
+                RSTP              => RST 
+            );
 
-            xDSP_M2: DSP48E1
-                generic map (
-                    -- Feature Control Attributes: Data Path Selection
-                    USE_MULT          => "MULTIPLY",
-                    -- Register Control Attributes: Pipeline Register Configuration
-                    ACASCREG          => 1,
-                    ADREG             => 1,
-                    ALUMODEREG        => 1,
-                    AREG              => 1,
-                    BCASCREG          => 1,
-                    BREG              => 1,
-                    CARRYINREG        => 1,
-                    CARRYINSELREG     => 1,
-                    CREG              => 1,
-                    DREG              => 1,
-                    INMODEREG         => 1,
-                    MREG              => 1,
-                    OPMODEREG         => 1,
-                    PREG              => 1 
-                )
-                port map (
-                    -- Data: input / output data ports
-                    A                 => dspA_M2, -- 30-bit input: A data input
-                    B                 => dspB_M2, -- 18-bit input: B data input
-                    C                 => (others=>'0'),
-                    D                 => (others=>'0'),
-                    P                 => open,
-                    PCOUT             => dspP_M2,
-                    -- Control: Inputs/Status Bits
-                    ALUMODE           => "0000",
-                    INMODE            => (others=>'0'),
-                    OPMODE            => "0000101",
-                    -- Carry input data
-                    ACIN              => (others=>'0'),
-                    BCIN              => (others=>'0'),
-                    PCIN              => (others=>'0'),
-                    CARRYINSEL        => (others=>'0'),
-                    CARRYCASCIN       => '0',
-                    CARRYIN           => '0',
-                    MULTSIGNIN        => '0',
-                    -- Clock enables
-                    CEA1              => '1',
-                    CEA2              => '1',
-                    CEAD              => '1',
-                    CEALUMODE         => '1',
-                    CEB1              => '1',
-                    CEB2              => '1',
-                    CEC               => '1',
-                    CECARRYIN         => '1',
-                    CECTRL            => '1',
-                    CED               => '1',
-                    CEINMODE          => '1',
-                    CEM               => '1',
-                    CEP               => '1',
-                    CLK               => CLK,
-                    -- Reset/Clock Enable --
-                    RSTA              => RST,
-                    RSTALLCARRYIN     => RST,
-                    RSTALUMODE        => RST,
-                    RSTB              => RST,
-                    RSTC              => RST,
-                    RSTCTRL           => RST,
-                    RSTD              => RST,
-                    RSTINMODE         => RST,
-                    RSTM              => RST,
-                    RSTP              => RST 
-                );
-        end generate;
+        xDSP_M2: DSP48E1
+            generic map (
+                -- Feature Control Attributes: Data Path Selection
+                USE_MULT          => "MULTIPLY",
+                -- Register Control Attributes: Pipeline Register Configuration
+                ACASCREG          => 1,
+                ADREG             => 1,
+                ALUMODEREG        => 1,
+                AREG              => 1,
+                BCASCREG          => 1,
+                BREG              => 1,
+                CARRYINREG        => 1,
+                CARRYINSELREG     => 1,
+                CREG              => 1,
+                DREG              => 1,
+                INMODEREG         => 1,
+                MREG              => 1,
+                OPMODEREG         => 1,
+                PREG              => 1 
+            )
+            port map (
+                -- Data: input / output data ports
+                A                 => dspA_M2, -- 30-bit input: A data input
+                B                 => dspB_M2, -- 18-bit input: B data input
+                C                 => (others=>'0'),
+                D                 => (others=>'0'),
+                P                 => open,
+                PCOUT             => dspP_M2,
+                -- Control: Inputs/Status Bits
+                ALUMODE           => "0000",
+                INMODE            => (others=>'0'),
+                OPMODE            => "0000101",
+                -- Carry input data
+                ACIN              => (others=>'0'),
+                BCIN              => (others=>'0'),
+                PCIN              => (others=>'0'),
+                CARRYINSEL        => (others=>'0'),
+                CARRYCASCIN       => '0',
+                CARRYIN           => '0',
+                MULTSIGNIN        => '0',
+                -- Clock enables
+                CEA1              => '1',
+                CEA2              => '1',
+                CEAD              => '1',
+                CEALUMODE         => '1',
+                CEB1              => '1',
+                CEB2              => '1',
+                CEC               => '1',
+                CECARRYIN         => '1',
+                CECTRL            => '1',
+                CED               => '1',
+                CEINMODE          => '1',
+                CEM               => '1',
+                CEP               => '1',
+                CLK               => CLK,
+                -- Reset/Clock Enable --
+                RSTA              => RST,
+                RSTALLCARRYIN     => RST,
+                RSTALUMODE        => RST,
+                RSTB              => RST,
+                RSTC              => RST,
+                RSTCTRL           => RST,
+                RSTD              => RST,
+                RSTINMODE         => RST,
+                RSTM              => RST,
+                RSTP              => RST 
+            );
+    end generate;
 
-        ---- Wrap DSP48E1 units ----
-        xDSP48E2: if (XSER = "NEW") generate
+    ---- Wrap DSP48E1 units ----
+    xDSP48E2: if (XSER = "NEW") generate
 
-            xDSP_M1: DSP48E2
-                generic map (
-                    -- Feature Control Attributes: Data Path Selection
-                    USE_MULT         => "MULTIPLY",
-                    -- Register Control Attributes: Pipeline Register Configuration
-                    ACASCREG         => 1,
-                    ADREG            => 1,
-                    ALUMODEREG       => 1,
-                    AREG             => 2,
-                    BCASCREG         => 1,
-                    BREG             => 2,
-                    CARRYINREG       => 1,
-                    CARRYINSELREG    => 1,
-                    CREG             => 1,
-                    DREG             => 1,
-                    INMODEREG        => 1,
-                    MREG             => 1,
-                    OPMODEREG        => 1,
-                    PREG             => 1 
-                )
-                port map (
-                    -- Data: input / output data ports
-                    A                => dspA_M1, -- 30-bit input: A data input
-                    B                => dspB_M1, -- 18-bit input: B data input
-                    C                => (others=>'0'),
-                    D                => (others=>'0'),
-                    P                => dspP_M1,
-                    PCOUT            => open,
-                    -- Control: Inputs/Status Bits
-                    ALUMODE          => ALUMODE,
-                    INMODE           => (others=>'0'),
-                    OPMODE           => "000010101",
-                    -- Carry input data
-                    ACIN             => (others=>'0'),    
-                    BCIN             => (others=>'0'),
-                    PCIN             => dspP_M2,
-                    CARRYINSEL       => (others=>'0'),
-                    CARRYCASCIN      => '0',
-                    CARRYIN          => '0',
-                    MULTSIGNIN       => '0',
-                    -- Clock enables
-                    CEA1             => '1',
-                    CEA2             => '1',
-                    CEAD             => '1',
-                    CEALUMODE        => '1',
-                    CEB1             => '1',
-                    CEB2             => '1',
-                    CEC              => '1',
-                    CECARRYIN        => '1',
-                    CECTRL           => '1',
-                    CED              => '1',
-                    CEINMODE         => '1',
-                    CEM              => '1',
-                    CEP              => '1',
-                    CLK              => CLK,
-                    -- Reset/Clock Enable --
-                    RSTA             => RST,
-                    RSTALLCARRYIN    => RST,
-                    RSTALUMODE       => RST,
-                    RSTB             => RST,
-                    RSTC             => RST,
-                    RSTCTRL          => RST,
-                    RSTD             => RST,
-                    RSTINMODE        => RST,
-                    RSTM             => RST,
-                    RSTP             => RST 
-                );
+        xDSP_M1: DSP48E2
+            generic map (
+                -- Feature Control Attributes: Data Path Selection
+                USE_MULT         => "MULTIPLY",
+                -- Register Control Attributes: Pipeline Register Configuration
+                ACASCREG         => 1,
+                ADREG            => 1,
+                ALUMODEREG       => 1,
+                AREG             => 2,
+                BCASCREG         => 1,
+                BREG             => 2,
+                CARRYINREG       => 1,
+                CARRYINSELREG    => 1,
+                CREG             => 1,
+                DREG             => 1,
+                INMODEREG        => 1,
+                MREG             => 1,
+                OPMODEREG        => 1,
+                PREG             => 1 
+            )
+            port map (
+                -- Data: input / output data ports
+                A                => dspA_M1, -- 30-bit input: A data input
+                B                => dspB_M1, -- 18-bit input: B data input
+                C                => (others=>'0'),
+                D                => (others=>'0'),
+                P                => dspP_M1,
+                PCOUT            => open,
+                -- Control: Inputs/Status Bits
+                ALUMODE          => ALUMODE,
+                INMODE           => (others=>'0'),
+                OPMODE           => "000010101",
+                -- Carry input data
+                ACIN             => (others=>'0'),    
+                BCIN             => (others=>'0'),
+                PCIN             => dspP_M2,
+                CARRYINSEL       => (others=>'0'),
+                CARRYCASCIN      => '0',
+                CARRYIN          => '0',
+                MULTSIGNIN       => '0',
+                -- Clock enables
+                CEA1             => '1',
+                CEA2             => '1',
+                CEAD             => '1',
+                CEALUMODE        => '1',
+                CEB1             => '1',
+                CEB2             => '1',
+                CEC              => '1',
+                CECARRYIN        => '1',
+                CECTRL           => '1',
+                CED              => '1',
+                CEINMODE         => '1',
+                CEM              => '1',
+                CEP              => '1',
+                CLK              => CLK,
+                -- Reset/Clock Enable --
+                RSTA             => RST,
+                RSTALLCARRYIN    => RST,
+                RSTALUMODE       => RST,
+                RSTB             => RST,
+                RSTC             => RST,
+                RSTCTRL          => RST,
+                RSTD             => RST,
+                RSTINMODE        => RST,
+                RSTM             => RST,
+                RSTP             => RST 
+            );
 
-            xDSP_M2: DSP48E2
-                generic map (
-                    -- Feature Control Attributes: Data Path Selection
-                    USE_MULT         => "MULTIPLY",
-                    -- Register Control Attributes: Pipeline Register Configuration
-                    ACASCREG         => 1,
-                    ADREG            => 1,
-                    ALUMODEREG       => 1,
-                    AREG             => 1,
-                    BCASCREG         => 1,
-                    BREG             => 1,
-                    CARRYINREG       => 1,
-                    CARRYINSELREG    => 1,
-                    CREG             => 1,
-                    DREG             => 1,
-                    INMODEREG        => 1,
-                    MREG             => 1,
-                    OPMODEREG        => 1,
-                    PREG             => 1 
-                )
-                port map (
-                    -- Data: input / output data ports
-                    A                => dspA_M2, -- 30-bit input: A data input
-                    B                => dspB_M2, -- 18-bit input: B data input
-                    C                => (others=>'0'),
-                    D                => (others=>'0'),
-                    P                => open,
-                    PCOUT            => dspP_M2,
-                    -- Control: Inputs/Status Bits
-                    ALUMODE          => "0000",
-                    INMODE           => (others=>'0'),
-                    OPMODE           => "000000101",
-                    -- Carry input data
-                    ACIN             => (others=>'0'),
-                    BCIN             => (others=>'0'),
-                    PCIN             => (others=>'0'),
-                    CARRYINSEL       => (others=>'0'),
-                    CARRYCASCIN      => '0',
-                    CARRYIN          => '0',
-                    MULTSIGNIN       => '0',
-                    -- Clock enables
-                    CEA1             => '1',
-                    CEA2             => '1',
-                    CEAD             => '1',
-                    CEALUMODE        => '1',
-                    CEB1             => '1',
-                    CEB2             => '1',
-                    CEC              => '1',
-                    CECARRYIN        => '1',
-                    CECTRL           => '1',
-                    CED              => '1',
-                    CEINMODE         => '1',
-                    CEM              => '1',
-                    CEP              => '1',
-                    CLK              => CLK,
-                    -- Reset/Clock Enable --
-                    RSTA             => RST,
-                    RSTALLCARRYIN    => RST,
-                    RSTALUMODE       => RST,
-                    RSTB             => RST,
-                    RSTC             => RST,
-                    RSTCTRL          => RST,
-                    RSTD             => RST,
-                    RSTINMODE        => RST,
-                    RSTM             => RST,
-                    RSTP             => RST 
-                );
-        end generate;
+        xDSP_M2: DSP48E2
+            generic map (
+                -- Feature Control Attributes: Data Path Selection
+                USE_MULT         => "MULTIPLY",
+                -- Register Control Attributes: Pipeline Register Configuration
+                ACASCREG         => 1,
+                ADREG            => 1,
+                ALUMODEREG       => 1,
+                AREG             => 1,
+                BCASCREG         => 1,
+                BREG             => 1,
+                CARRYINREG       => 1,
+                CARRYINSELREG    => 1,
+                CREG             => 1,
+                DREG             => 1,
+                INMODEREG        => 1,
+                MREG             => 1,
+                OPMODEREG        => 1,
+                PREG             => 1 
+            )
+            port map (
+                -- Data: input / output data ports
+                A                => dspA_M2, -- 30-bit input: A data input
+                B                => dspB_M2, -- 18-bit input: B data input
+                C                => (others=>'0'),
+                D                => (others=>'0'),
+                P                => open,
+                PCOUT            => dspP_M2,
+                -- Control: Inputs/Status Bits
+                ALUMODE          => "0000",
+                INMODE           => (others=>'0'),
+                OPMODE           => "000000101",
+                -- Carry input data
+                ACIN             => (others=>'0'),
+                BCIN             => (others=>'0'),
+                PCIN             => (others=>'0'),
+                CARRYINSEL       => (others=>'0'),
+                CARRYCASCIN      => '0',
+                CARRYIN          => '0',
+                MULTSIGNIN       => '0',
+                -- Clock enables
+                CEA1             => '1',
+                CEA2             => '1',
+                CEAD             => '1',
+                CEALUMODE        => '1',
+                CEB1             => '1',
+                CEB2             => '1',
+                CEC              => '1',
+                CECARRYIN        => '1',
+                CECTRL           => '1',
+                CED              => '1',
+                CEINMODE         => '1',
+                CEM              => '1',
+                CEP              => '1',
+                CLK              => CLK,
+                -- Reset/Clock Enable --
+                RSTA             => RST,
+                RSTALLCARRYIN    => RST,
+                RSTALUMODE       => RST,
+                RSTB             => RST,
+                RSTC             => RST,
+                RSTCTRL          => RST,
+                RSTD             => RST,
+                RSTINMODE        => RST,
+                RSTM             => RST,
+                RSTP             => RST 
+            );
     end generate;
 
 end int_cmult18x25_dsp48;
