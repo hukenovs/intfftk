@@ -203,7 +203,7 @@ wr_dout: process(clk) is -- write file_io.out (++ done goes to '1')
     variable spc    : string(1 to 4) := (others => ' ');    
 begin
     if rising_edge(clk) then
-        if (do_vl_wrap = '1') then
+        if (qo_vl = '1') then
             write(stx, CONV_INTEGER(q0_re(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);
             write(stx, spc);
             write(stx, CONV_INTEGER(q1_re(NFFT+NFFT+DATA_WIDTH-1 downto NFFT+NFFT+DATA_WIDTH-1-16)), LEFT);

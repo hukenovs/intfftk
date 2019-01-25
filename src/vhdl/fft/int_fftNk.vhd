@@ -71,7 +71,7 @@ use ieee.std_logic_1164.all;
 
 entity int_fftNk is
     generic (
-        IS_SIM      : boolean:=FALSE;        --! Simulation model: TRUE / FALSE    
+        -- IS_SIM      : boolean:=FALSE;        --! Simulation model: TRUE / FALSE    
         NFFT        : integer:=5;            --! Number of FFT stages
         RAMB_TYPE   : string:="WRAP";        --! Cross-commutation type: WRAP / CONT
         -- MODE        : string:="UNSCALED"; --! Unscaled, Rounding, Truncate modes
@@ -186,7 +186,7 @@ begin
     ---- Butterflies ----
     xBUTTERFLY: entity work.int_dif2_fly
         generic map ( 
-            IS_SIM   => IS_SIM,
+            -- IS_SIM   => IS_SIM,
             SCALE    => SCALE,
             RNDMODE  => RNDMODE,
             STAGE    => NFFT-ii-1,

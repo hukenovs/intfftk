@@ -51,7 +51,7 @@ use ieee.std_logic_unsigned.all;
 
 entity int_dif2_fly is
     generic(
-        IS_SIM      : boolean:=FALSE; --! Simulation model: TRUE / FALSE
+        -- IS_SIM      : boolean:=FALSE; --! Simulation model: TRUE / FALSE
         STAGE       : integer:=0;  --! Butterfly stages
         SCALE       : integer:=0;  --! 1 - Scaled FFT, 0 - Unscaled
         DTW         : integer:=16; --! Data width
@@ -347,7 +347,7 @@ begin
     
     xCMPL: entity work.int_cmult_dsp48
         generic map (
-            IS_SIM  => IS_SIM,  
+            -- IS_SIM  => IS_SIM,  
             DTW     => DTW+1-SCALE,
             TWD     => TFW,
             XSER    => XSER

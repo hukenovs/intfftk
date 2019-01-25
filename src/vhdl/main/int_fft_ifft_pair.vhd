@@ -208,7 +208,7 @@ di_im1 <= db_dt(2*DATA_WIDTH-1 downto 1*DATA_WIDTH);
 ------------------ FFTK_N (FORWARD FFT) --------------------
 xFFT: entity work.int_fftNk
     generic map (
-        IS_SIM        => FALSE,
+        -- IS_SIM        => FALSE,
         NFFT          => NFFT,
         -- MODE          => MODE,
         FORMAT        => FORMAT,
@@ -252,7 +252,7 @@ end process;
 
 xIFFT: entity work.int_ifftNk
     generic map (
-        IS_SIM        => FALSE,
+        -- IS_SIM        => FALSE,
         NFFT          => NFFT,
         -- MODE          => MODE,
         FORMAT        => FORMAT,

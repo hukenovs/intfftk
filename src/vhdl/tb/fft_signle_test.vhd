@@ -90,7 +90,7 @@ end function;
 -- **************************************************************** --
 -- **** Constant declaration: change any parameter for testing **** --
 -- **************************************************************** --
-constant NFFT            : integer:=4; -- Number of stages = log2(FFT LENGTH)
+constant NFFT            : integer:=7; -- Number of stages = log2(FFT LENGTH)
 
 constant DATA_WIDTH      : integer:=16; -- Data width for signal imitator    : 8-32.
 constant TWDL_WIDTH      : integer:=16; -- Data width for twiddle factor     : 16-24.
@@ -201,6 +201,43 @@ begin
                     di_en <= '1'; 
             end loop;
         
+            wait until rising_edge(clk);
+            di_en <= '0';
+            di_re <= (others => '0');
+            di_im <= (others => '0');
+
+
+            file_close( fl_data);
+            file_open( fl_data, fl_path, read_mode );
+
+            while not endfile(fl_data) loop
+                wait until rising_edge(clk);
+                    readline( fl_data, l );
+                    read( l, lt1 ); read( l, lt2 );
+
+                    di_re <= conv_std_logic_vector( lt1, DATA_WIDTH );
+                    di_im <= conv_std_logic_vector( lt2, DATA_WIDTH );
+                    di_en <= '1'; 
+            end loop;
+
+            wait until rising_edge(clk);
+            di_en <= '0';
+            di_re <= (others => '0');
+            di_im <= (others => '0');
+
+            file_close( fl_data);
+            file_open( fl_data, fl_path, read_mode );
+
+            while not endfile(fl_data) loop
+                wait until rising_edge(clk);
+                    readline( fl_data, l );
+                    read( l, lt1 ); read( l, lt2 );
+
+                    di_re <= conv_std_logic_vector( lt1, DATA_WIDTH );
+                    di_im <= conv_std_logic_vector( lt2, DATA_WIDTH );
+                    di_en <= '1'; 
+            end loop;
+
             wait until rising_edge(clk);
             di_en <= '0';
             di_re <= (others => '0');
@@ -328,36 +365,6 @@ begin
     end if;
 end process; 
 
-xBITREV1 : entity work.int_bitrev_ord
-    generic map (
-        STAGES     => NFFT,
-        NWIDTH     => DATA_WIDTH    
-    )
-    port map (
-        clk        => clk,
-        reset      => rstp,
-
-        di_dt      => di_re,
-        di_en      => di_en,
-        do_dt      => open,
-        do_vl      => open
-    );
-
-xBITREV2 : entity work.int_bitrev_ord2
-    generic map (
-        STAGES     => NFFT,
-        NWIDTH     => DATA_WIDTH    
-    )
-    port map (
-        clk        => clk,
-        reset      => rstp,
-
-        di_dt      => di_re,
-        di_en      => di_en,
-        do_dt      => open,
-        do_vl      => open
-    );
-
 
 xUUT: if (NFFT > 0) generate
 
@@ -456,27 +463,6 @@ UUT_ROUND: entity work.int_fft_single_path
         FLY_FWD     => fly_fwd
     );
 end generate;
-
-UUT_CONT: entity work.int_fft_single_path
-    generic map (
-        DATA_WIDTH  => DATA_WIDTH,
-        TWDL_WIDTH  => TWDL_WIDTH,
-        FORMAT      => 0,
-        RNDMODE     => 0,
-        XSERIES     => XSERIES,
-        NFFT        => NFFT
-    )
-    port map (
-        ---- Common signals ----
-        RESET       => rstp,
-        CLK         => clk,
-        ---- Input data ----
-        DI_RE       => di_re,
-        DI_IM       => di_im,
-        DI_EN       => di_en,
-        ---- Butterflies ----
-        FLY_FWD     => '0'
-    );
 
 ------------------------------------------------
 end fft_signle_test; 
