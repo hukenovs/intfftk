@@ -2,7 +2,7 @@
 # Integer FFT/IFFT cores
 
 This project contains **fully pipelined** integer **unscaled** and **scaled (truncated LSB)** FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;    
-Integer data type and twiddles.  
+Integer data type and twiddles with configurable data width.   
 **Code language** - VHDL, Verilog
 **Vendor**: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
 
@@ -12,20 +12,20 @@ License: GNU GPL 3.0.
 
 ### Main information
 
-| **Title**         | Universal integer FFT cores( Xilinx FPGAs) |
+| **Title**         | Universal integer FFT cores (Xilinx FPGAs) |
 | -- | -- |
 | **Author**        | Alexander Kapitanov                        |
 | **Contact**       | sallador@bk.ru                             |
 | **Project lang**  | VHDL, Verilog                              |
 | **Vendor**        | Xilinx: 6/7-series, Ultrascale, US+        |
 | **Release Date**  | 13 May 2018                                |
-| **Last Update**   | 31 Nov 2018                                |
+| **Last Update**   | 11 Jan 2019                                |
 
 ### List of complements:
 - FFTs:
    * int_fftNk – main core - Full-precision or Scaled FFT, Radix-2, DIF, input flow - normal, output flow - bit-reversed.
    * int_ifftNk – main core - Full-precision or Scaled IFFT, Radix-2, DIT, input flow - bit-reversed, output flow - normal.
-- Bflies:
+- Butterflies:
    * int_dif2_fly – Full-precision or Scaled butterfly Radix-2, decimation in frequency,
    * int_dit2_fly – Full-precision or Scaled butterfly Radix-2, decimation in time,
 - Complex multipliers:
