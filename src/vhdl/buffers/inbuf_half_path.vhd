@@ -201,8 +201,8 @@ begin
     end if;
 end process;	
 
-da_dt <= ram_doa ; ---- when rising_edge(clk);
-db_dt <= ram_dob ; ---- when rising_edge(clk);
-ab_vl <= ram_vl  ; ---- when rising_edge(clk);
+da_dt <= ram_doa when rising_edge(clk);
+db_dt <= ram_dob when rising_edge(clk);
+ab_vl <= ram_vl  when rising_edge(clk);
 
 end inbuf_half_path;

@@ -208,6 +208,10 @@ signal cnt_even        : std_logic_vector(ADDR-1 downto 0);
 signal cnt_odd         : std_logic_vector(ADDR-1 downto 0);
 signal sw_ptr          : std_logic_vector(ADDR-1 downto 0);
 
+-- Shared mem signal
+type mem_type is array (integer range <>) of std_logic_vector(DATA-1 downto 0);
+shared variable mem : mem_type((2**ADDR)-1 downto 0)  := (others => (others => '0'));
+
 begin
 
 ---------------- Write Increment ---------------- 
@@ -228,8 +232,8 @@ begin
                     sw_cnt <= (0 => '1', others => '0');
                 else
                     sw_cnt <= sw_cnt + '1';
-                end if;                    
-                
+                end if;
+
                 ---- Counter for Arrays ----
                 if (sw_cnt(sw_cnt'left) = '1') then
                     if (in_cnt = (ADDR-1)) then
@@ -296,7 +300,7 @@ begin
         if (rst = '1') then
             rd_1st <= '0';
         else
-            if (sw_ptr(sw_ptr'left) = '1') then
+            if ((dt_en01 = '1') and sw_ptr(sw_ptr'left) = '1') then
                 rd_1st <= '1';
             end if;
         end if;
@@ -337,24 +341,28 @@ begin
 end process;
 ram_rdz <= ram_rd when rising_edge(clk);
 
-xTDP_RAM: entity work.ramb_tdp_one_clk2
-    generic map (
-        DATA    => DATA,
-        ADDR    => ADDR
-        )
-    port map (
-        -- rst  => rst,
-        clk     => clk,
-        -- Port A
-        a_wr    => ram_wr,
-        a_addr  => ram_adra,
-        a_din   => ram_dia, 
-        a_dout  => ram_doa,
-        -- Port B
-        b_wr    => ram_wr,
-        b_addr  => ram_adrb,
-        b_din   => ram_dib, 
-        b_dout  => ram_dob
-    );
+---------------- Attach Dual-port one-clock RAM ----------------
+-- Port A write --
+pr_wa: process(clk) is
+begin
+    if (clk'event and clk='1') then
+        ram_doa <= mem(conv_integer(ram_adra));
+        if (ram_wr = '1') then
+            mem(conv_integer(ram_adra)) := ram_dia;
+        end if; 
+    end if;
+end process;
+
+-- Port B write --
+pr_wb: process(clk) is
+begin
+    if (clk'event and clk='1') then
+        ram_dob <= mem(conv_integer(ram_adrb));
+        if (ram_wr = '1') then
+            mem(conv_integer(ram_adrb)) := ram_dib;
+        end if; 
+    end if;
+end process;
+
 
 end iobuf_flow_int2;
