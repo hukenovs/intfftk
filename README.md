@@ -14,7 +14,7 @@ License: GNU GPL 3.0.
 
 | **Title**         | Universal integer FFT cores (Xilinx FPGAs) |
 | -- | -- |
-| **Author**        | Alexander Kapitanov                        |
+| **Author**        | [Alexander Kapitanov](https://habr.com/ru/users/hukenovs/) |
 | **Contact**       | <hidden>                                   |
 | **Project lang**  | VHDL, Verilog                              |
 | **Vendor**        | Xilinx: 6/7-series, Ultrascale, US+        |
@@ -66,14 +66,11 @@ License: GNU GPL 3.0.
   * iobuf_flow_int2 – Mode-1: BITREV = FALSE: convert Interleave-2 flow into two parts of input flows, Mode-2: BITREV = TRUE: convert two-half flows into Interleave-2 signal. 
   * int_bitrev_ord – simple converter data from bit-reverse to natural order.
 
-### Link (Russian collaborative IT blog)
-  * https://habr.com/users/capitanov/
-  
-### Authors:
-  * Kapitanov Alexander  
+### Author:
+  * [Kapitanov Alexander](https://habr.com/ru/users/hukenovs/) 
   
 ### Release:
-  * 2018/13/05.
+  * 2018/13/05  
 
 ### License:
-  * GNU GPL 3.0.  
+  * GNU GPL 3.0  
