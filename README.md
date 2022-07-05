@@ -15,7 +15,7 @@ License: GNU GPL 3.0.
 | **Title**         | Universal integer FFT cores (Xilinx FPGAs) |
 | -- | -- |
 | **Author**        | [Alexander Kapitanov](https://habr.com/ru/users/hukenovs/) |
-| **Contact**       | <hidden>                                   |
+| **Project**       | [Habrahabr](https://habr.com/ru/post/420517/) |
 | **Project lang**  | VHDL, Verilog                              |
 | **Vendor**        | Xilinx: 6/7-series, Ultrascale, US+        |
 | **Release Date**  | 13 May 2018                                |
