@@ -2,8 +2,11 @@
 # Integer FFT/IFFT cores
 
 This project contains **fully pipelined** integer **unscaled** and **scaled (truncated LSB)** FFT/IFFT cores for FPGA, Scheme: Radix-2, Decimation in frequency and decimation in time;    
+
 Integer data type and twiddles with configurable data width.   
+
 **Code language** - VHDL, Verilog
+
 **Vendor**: Xilinx, 6/7-series, Ultrascale, Ultrascale+;  
 
 > _Smallest FPGA resourses and highest processing frequency that you ever seen!_   
